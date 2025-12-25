@@ -8,14 +8,20 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "https://s2.loli.net/2025/12/25/vJNMC1xYzG3risE.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icon.png",
+      "src": "https://s2.loli.net/2025/12/25/KAktTGrdNchXgZ1.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

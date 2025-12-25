@@ -1,9 +1,9 @@
-const CACHE_NAME = 'campus-shuttle-v4';
+const CACHE_NAME = 'campus-shuttle-v5';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.png',
+  '/icon.svg',
   '/lite.html'
 ];
 
