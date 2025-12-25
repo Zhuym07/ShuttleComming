@@ -5,7 +5,8 @@ import ScheduleList from './components/ScheduleList';
 import DateSelector from './components/DateSelector';
 import PWAPrompt from './components/PWAPrompt';
 import { Direction, BusRun, DayOfWeek } from './types';
-import { SCHEDULE_N_S, SCHEDULE_S_N, STATIONS_N_S, STATIONS_S_N } from './constants';
+import { SCHEDULE_N_S, SCHEDULE_S_N } from './config/schedules';
+import { STATIONS_N_S, STATIONS_S_N } from './config/stations';
 import { getCurrentTimeMinutes, getBusesForToday } from './utils';
 import { Info } from 'lucide-react';
 import { Language, translate } from './locales';
@@ -108,8 +109,9 @@ const App: React.FC = () => {
         />
 
         {/* Footer / Stats */}
-        <div className="text-center text-gray-400 text-xs py-4">
+        <div className="text-center text-gray-400 text-xs py-4 flex flex-col gap-1">
           <p>{translate(lang, 'displaying_runs', { count: todaysSchedule.length, date: formattedDate })}</p>
+          <p>© Ckar</p>
         </div>
 
       </main>
