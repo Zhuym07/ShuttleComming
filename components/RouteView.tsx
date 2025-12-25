@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { BusRun, Direction, Station, LiveBus } from '../types';
-import { timeToMinutes } from '../utils';
+import { timeToMinutes, minutesToTime } from '../utils';
 import { Bus, Clock } from 'lucide-react';
 import { Language, translate } from '../locales';
 
@@ -110,6 +110,14 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
     );
   };
 
+  // Calculate estimated arrival time string for a station
+  const getEstimatedArrivalTime = (station: Station) => {
+    if (!nextBus) return null;
+    const baseTime = timeToMinutes(nextBus.departureTime);
+    const arrivalTime = baseTime + station.distanceFromStart;
+    return minutesToTime(arrivalTime);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       
@@ -141,6 +149,7 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
       <div className="p-6 relative">
         {stations.map((station, index) => {
           const isLast = index === stations.length - 1;
+          const estimatedTime = getEstimatedArrivalTime(station);
           
           return (
             <div key={station.id} className="relative flex pb-12 last:pb-0 group">
@@ -162,8 +171,15 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-gray-800 text-lg leading-tight">{getStationName(station)}</h3>
-                    <p className="text-xs text-gray-500 mt-1 uppercase tracking-wide">
-                      {index === 0 ? translate(lang, 'start') : `+${station.distanceFromStart} ${translate(lang, 'mins')}`}
+                    <p className="text-xs text-gray-500 mt-1 uppercase tracking-wide flex items-center gap-1">
+                      <span>
+                        {index === 0 ? translate(lang, 'start') : `+${station.distanceFromStart} ${translate(lang, 'mins')}`}
+                      </span>
+                      {estimatedTime && (
+                        <span className="text-gray-400 font-medium font-mono">
+                          ({estimatedTime})
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>

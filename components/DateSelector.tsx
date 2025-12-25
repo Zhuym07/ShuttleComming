@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Language, translate } from '../locales';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
@@ -35,8 +35,6 @@ const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onSelectDate,
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value) {
       // Create date from YYYY-MM-DD string, ensuring local time (by splitting or using component logic)
-      // new Date("YYYY-MM-DD") creates UTC, which might differ from local date.
-      // Better to split.
       const [year, month, day] = e.target.value.split('-').map(Number);
       const newDate = new Date(year, month - 1, day);
       onSelectDate(newDate);
@@ -79,10 +77,10 @@ const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onSelectDate,
           {/* Vertical Separator */}
           <div className="w-px h-10 bg-gray-100 mx-1"></div>
 
-          {/* Calendar Button */}
+          {/* Calendar Button (Using label to trigger input properly) */}
           <div className="relative px-1">
-             <button 
-                className={`flex flex-col items-center justify-center w-[4.5rem] h-[3.8rem] rounded-lg transition-all border relative overflow-hidden ${
+             <label 
+                className={`flex flex-col items-center justify-center w-[4.5rem] h-[3.8rem] rounded-lg transition-all border relative overflow-hidden cursor-pointer ${
                   !isSelectedInList
                     ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm' 
                     : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'
@@ -91,14 +89,14 @@ const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onSelectDate,
                 <CalendarIcon size={20} className="mb-1" />
                 <span className="text-[10px] font-medium leading-none">{translate(lang, 'select_date')}</span>
                 
-                {/* Invisible Date Input covering the button */}
+                {/* Invisible Date Input covering the area */}
                 <input 
                   type="date" 
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   onChange={handleDateChange}
                   value={dateInputValue}
                 />
-             </button>
+             </label>
           </div>
 
         </div>
