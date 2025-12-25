@@ -1,6 +1,5 @@
 import React from 'react';
 import { Language, translate } from '../locales';
-import { Calendar as CalendarIcon } from 'lucide-react';
 
 interface DateSelectorProps {
   selectedDate: Date;
@@ -9,8 +8,8 @@ interface DateSelectorProps {
 }
 
 const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onSelectDate, lang }) => {
-  // Generate next 5 days for quick access
-  const dates = Array.from({ length: 5 }, (_, i) => {
+  // Generate next 14 days (2 weeks) for quick access
+  const dates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
     return d;
@@ -28,21 +27,6 @@ const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onSelectDate,
     const dayKey = `day_${date.getDay()}` as any;
     return translate(lang, dayKey);
   };
-
-  // Helper to check if the selected date is within the quick access list
-  const isSelectedInList = dates.some(d => isSameDate(d, selectedDate));
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value) {
-      // Create date from YYYY-MM-DD string, ensuring local time (by splitting or using component logic)
-      const [year, month, day] = e.target.value.split('-').map(Number);
-      const newDate = new Date(year, month - 1, day);
-      onSelectDate(newDate);
-    }
-  };
-
-  // Format date for input default value: YYYY-MM-DD
-  const dateInputValue = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   return (
     <div className="bg-white border-b border-gray-200 sticky top-[72px] z-40">
@@ -72,31 +56,6 @@ const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onSelectDate,
                 </button>
               );
             })}
-          </div>
-
-          {/* Vertical Separator */}
-          <div className="w-px h-10 bg-gray-100 mx-1"></div>
-
-          {/* Calendar Button (Using label to trigger input properly) */}
-          <div className="relative px-1">
-             <label 
-                className={`flex flex-col items-center justify-center w-[4.5rem] h-[3.8rem] rounded-lg transition-all border relative overflow-hidden cursor-pointer ${
-                  !isSelectedInList
-                    ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm' 
-                    : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'
-                }`}
-             >
-                <CalendarIcon size={20} className="mb-1" />
-                <span className="text-[10px] font-medium leading-none">{translate(lang, 'select_date')}</span>
-                
-                {/* Invisible Date Input covering the area */}
-                <input 
-                  type="date" 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  onChange={handleDateChange}
-                  value={dateInputValue}
-                />
-             </label>
           </div>
 
         </div>

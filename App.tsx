@@ -111,7 +111,9 @@ const App: React.FC = () => {
         {/* Footer / Stats */}
         <div className="text-center text-gray-400 text-xs py-4 flex flex-col gap-1">
           <p>{translate(lang, 'displaying_runs', { count: todaysSchedule.length, date: formattedDate })}</p>
-          <p>© Ckar</p>
+          <p>
+            © Ckar | <a href="/lite.html" className="underline hover:text-brand-600">Lite Version (Legacy)</a>
+          </p>
         </div>
 
       </main>

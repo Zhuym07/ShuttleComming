@@ -5,29 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GT Shuttle Lite</title>
     <style type="text/css">
-        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; font-size: 14px; color: #333; }
-        .header { background-color: #0284c7; color: white; padding: 10px; text-align: center; border-bottom: 2px solid #0369a1; }
-        .header h1 { margin: 0; font-size: 18px; }
-        .header p { margin: 2px 0 0; font-size: 12px; color: #e0f2fe; }
-        .nav { padding: 10px; text-align: center; background: #fff; border-bottom: 1px solid #ccc; }
-        .btn { display: inline-block; padding: 8px 15px; background: #eee; border: 1px solid #ccc; color: #333; text-decoration: none; font-weight: bold; cursor: pointer; }
+        body { font-family: sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; font-size: 14px; color: #333; }
+        .header { background-color: #0284c7; color: white; padding: 8px; text-align: center; border-bottom: 2px solid #0369a1; }
+        .header h1 { margin: 0; font-size: 16px; }
+        .header p { margin: 2px 0 0; font-size: 11px; color: #e0f2fe; }
+        .nav { padding: 8px; text-align: center; background: #fff; border-bottom: 1px solid #ccc; }
+        .btn { display: inline-block; padding: 6px 12px; background: #eee; border: 1px solid #ccc; color: #333; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 12px; }
         .btn-active { background: #0284c7; color: white; border-color: #0369a1; }
-        .content { padding: 10px; max-width: 600px; margin: 0 auto; }
-        .info-box { background: #fffbeb; border: 1px solid #fcd34d; padding: 8px; margin-bottom: 10px; font-size: 12px; color: #92400e; }
-        .schedule-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #ddd; }
-        .schedule-table th { background: #f9fafb; padding: 8px; border-bottom: 2px solid #ddd; text-align: left; }
-        .schedule-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        .content { padding: 8px; max-width: 600px; margin: 0 auto; }
+        
+        /* Live Status Box */
+        .live-box { background: #ecfdf5; border: 1px solid #10b981; padding: 10px; margin-bottom: 10px; border-radius: 4px; display: none; }
+        .live-title { font-weight: bold; color: #047857; font-size: 13px; margin-bottom: 5px; border-bottom: 1px solid #a7f3d0; padding-bottom: 3px; }
+        .live-item { margin-bottom: 4px; font-size: 12px; color: #065f46; }
+        .live-highlight { color: #d97706; font-weight: bold; }
+
+        .info-box { background: #fffbeb; border: 1px solid #fcd34d; padding: 8px; margin-bottom: 10px; font-size: 11px; color: #92400e; }
+        .schedule-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #ddd; font-size: 12px; }
+        .schedule-table th { background: #f9fafb; padding: 6px; border-bottom: 2px solid #ddd; text-align: left; }
+        .schedule-table td { padding: 6px; border-bottom: 1px solid #eee; }
         .next-bus { background-color: #e0f2fe; font-weight: bold; color: #0284c7; }
-        .past-bus { color: #999; }
-        .tag { font-size: 10px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 2px; margin-left: 5px; text-transform: uppercase; }
-        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+        .past-bus { color: #bbb; }
+        .footer { text-align: center; padding: 15px; color: #999; font-size: 11px; border-top: 1px solid #ddd; margin-top: 10px; }
+        .footer a { color: #0284c7; text-decoration: none; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>GT Shuttle Lite</h1>
-    <p id="clock">Loading time...</p>
+    <p id="clock">Loading...</p>
 </div>
 
 <div class="nav">
@@ -36,23 +43,37 @@
 </div>
 
 <div class="content">
+    <div id="live-status" class="live-box">
+        <div class="live-title">Real-time Status</div>
+        <div id="live-content"></div>
+    </div>
+
     <div class="info-box">
-        <strong>Lite Mode:</strong> Optimized for older devices. <a href="/">Try Full Version</a>
-        <br/><br/>
-        Time: Gate 9 &harr; Gate 2 (3m), Gate 2 &harr; North (5m).
+        Simple version for legacy devices.<br/>
+        Est. Time: G9&harr;G2 (3m), G2&harr;N (5m).
     </div>
 
     <div id="schedule-container">
-        <!-- Table goes here -->
+        <!-- Table -->
     </div>
 </div>
 
 <div class="footer">
-    &copy; Ckar | Legacy Support
+    &copy; Ckar | <a href="/">Switch to Full Version</a>
 </div>
 
 <script type="text/javascript">
-    // --- Data Definitions (Embedded for standalone support) ---
+    // --- Compatibility Polyfills ---
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function(obj, start) {
+            for (var i = (start || 0), j = this.length; i < j; i++) {
+                if (this[i] === obj) { return i; }
+            }
+            return -1;
+        }
+    }
+
+    // --- Data ---
     var DAILY = [0, 1, 2, 3, 4, 5, 6];
     var WEEKDAYS = [1, 2, 3, 4, 5];
     var WED_FRI = [3, 5];
@@ -64,6 +85,21 @@
     var TUE_THU = [2, 4];
     var MON_FRI = [1, 5];
     var TUE_ONLY = [2];
+
+    // Stations Data (Distance in minutes)
+    // SN: SC Gate 9 (0) -> SC Gate 2 (3) -> NC Main (8)
+    var STATIONS_SN = [
+        { name: 'SC Gate 9', dist: 0 },
+        { name: 'SC Gate 2', dist: 3 },
+        { name: 'NC Main', dist: 8 }
+    ];
+
+    // NS: NC Main (0) -> SC Gate 2 (5) -> SC Gate 9 (8)
+    var STATIONS_NS = [
+        { name: 'NC Main', dist: 0 },
+        { name: 'SC Gate 2', dist: 5 },
+        { name: 'SC Gate 9', dist: 8 }
+    ];
 
     var SCHEDULE_S_N = [
       { t: '07:25', d: DAILY }, { t: '07:25', d: WED_THU_FRI, c: 'red' }, { t: '07:40', d: TUE_WED_THU_FRI, c: 'red' },
@@ -97,7 +133,7 @@
       { t: '20:00', d: DAILY }, { t: '20:40', d: DAILY }, { t: '22:00', d: DAILY }
     ];
 
-    // --- Logic ---
+    // --- State & Logic ---
     var currentDirection = 'SN'; // SN or NS
 
     function getNowMinutes() {
@@ -144,6 +180,65 @@
             btnNs.className = 'btn-active';
         }
         renderSchedule();
+        renderLiveStatus();
+    }
+
+    // New Function: Render Real-time Bus Logic in ES3
+    function renderLiveStatus() {
+        var container = document.getElementById('live-status');
+        var content = document.getElementById('live-content');
+        var data = currentDirection === 'SN' ? SCHEDULE_S_N : SCHEDULE_N_S;
+        var stations = currentDirection === 'SN' ? STATIONS_SN : STATIONS_NS;
+        var totalDur = stations[stations.length - 1].dist;
+        
+        var day = getDayOfWeek();
+        var nowMin = getNowMinutes();
+        var activeHtml = '';
+        var hasActive = false;
+
+        for (var i = 0; i < data.length; i++) {
+            var bus = data[i];
+            if (hasDay(bus.d, day)) {
+                var depMin = timeToMin(bus.t);
+                var elapsed = nowMin - depMin;
+                
+                // If bus is active (elapsed >= 0 and elapsed <= total duration + 2 min buffer)
+                if (elapsed >= 0 && elapsed <= totalDur + 2) {
+                    hasActive = true;
+                    var locationText = "Arrived";
+                    var nextText = "";
+
+                    // Find location
+                    for (var j = 0; j < stations.length - 1; j++) {
+                        var currS = stations[j];
+                        var nextS = stations[j+1];
+                        
+                        if (elapsed >= currS.dist && elapsed < nextS.dist) {
+                            var minToNext = nextS.dist - elapsed;
+                            locationText = "Past " + currS.name;
+                            nextText = "Arriving " + nextS.name + " in " + minToNext + "m";
+                            break;
+                        } else if (elapsed >= stations[stations.length-1].dist) {
+                             locationText = "Arrived at " + stations[stations.length-1].name;
+                        }
+                    }
+
+                    activeHtml += '<div class="live-item">';
+                    activeHtml += '<strong>Bus ' + bus.t + ':</strong> ' + locationText + '. ';
+                    if (nextText) {
+                        activeHtml += '<span class="live-highlight">' + nextText + '</span>';
+                    }
+                    activeHtml += '</div>';
+                }
+            }
+        }
+
+        if (hasActive) {
+            content.innerHTML = activeHtml;
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
     }
 
     function renderSchedule() {
@@ -152,13 +247,12 @@
         var day = getDayOfWeek();
         var nowMin = getNowMinutes();
         
-        var html = '<table class="schedule-table"><thead><tr><th>Departure</th><th>Notes</th></tr></thead><tbody>';
+        var html = '<table class="schedule-table"><thead><tr><th>Time</th><th>Status</th></tr></thead><tbody>';
         
         var hasNext = false;
         var displayCount = 0;
 
-        // Sort data just in case
-        // ES3 sort
+        // Sort
         data.sort(function(a, b) {
             return timeToMin(a.t) - timeToMin(b.t);
         });
@@ -176,12 +270,13 @@
                 if (isPast) rowClass = 'past-bus';
                 if (isNext) rowClass = 'next-bus';
 
-                var note = 'Standard';
-                if (item.c) note = item.c.toUpperCase();
+                var status = 'Scheduled';
+                if (item.c) status = item.c.toUpperCase();
+                if (isPast) status = 'Departed';
 
                 html += '<tr class="' + rowClass + '">';
-                html += '<td>' + item.t + (isNext ? ' <span style="font-size:10px">(Next)</span>' : '') + '</td>';
-                html += '<td>' + note + '</td>';
+                html += '<td>' + item.t + (isNext ? ' <span class="tag">Next</span>' : '') + '</td>';
+                html += '<td>' + status + '</td>';
                 html += '</tr>';
                 
                 displayCount++;
@@ -189,7 +284,7 @@
         }
 
         if (displayCount === 0) {
-            html += '<tr><td colspan="2" style="text-align:center; padding: 20px;">No buses for today.</td></tr>';
+            html += '<tr><td colspan="2" style="text-align:center; padding: 20px;">No buses scheduled today.</td></tr>';
         }
 
         html += '</tbody></table>';
@@ -200,10 +295,13 @@
     window.onload = function() {
         setInterval(renderClock, 1000);
         renderClock();
-        renderSchedule();
+        setDirection('SN'); // This triggers renderSchedule and renderLiveStatus
         
-        // Auto refresh schedule every minute
-        setInterval(renderSchedule, 60000);
+        // Auto refresh
+        setInterval(function() {
+            renderSchedule();
+            renderLiveStatus();
+        }, 30000);
     };
 
 </script>
