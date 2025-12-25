@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GT Shuttle Lite</title>
+    <style type="text/css">
+        body { font-family: Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; font-size: 14px; color: #333; }
+        .header { background-color: #0284c7; color: white; padding: 10px; text-align: center; border-bottom: 2px solid #0369a1; }
+        .header h1 { margin: 0; font-size: 18px; }
+        .header p { margin: 2px 0 0; font-size: 12px; color: #e0f2fe; }
+        .nav { padding: 10px; text-align: center; background: #fff; border-bottom: 1px solid #ccc; }
+        .btn { display: inline-block; padding: 8px 15px; background: #eee; border: 1px solid #ccc; color: #333; text-decoration: none; font-weight: bold; cursor: pointer; }
+        .btn-active { background: #0284c7; color: white; border-color: #0369a1; }
+        .content { padding: 10px; max-width: 600px; margin: 0 auto; }
+        .info-box { background: #fffbeb; border: 1px solid #fcd34d; padding: 8px; margin-bottom: 10px; font-size: 12px; color: #92400e; }
+        .schedule-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #ddd; }
+        .schedule-table th { background: #f9fafb; padding: 8px; border-bottom: 2px solid #ddd; text-align: left; }
+        .schedule-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        .next-bus { background-color: #e0f2fe; font-weight: bold; color: #0284c7; }
+        .past-bus { color: #999; }
+        .tag { font-size: 10px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 2px; margin-left: 5px; text-transform: uppercase; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GT Shuttle Lite</h1>
+    <p id="clock">Loading time...</p>
+</div>
+
+<div class="nav">
+    <button id="btn-sn" class="btn btn-active" onclick="setDirection('SN')">South &rarr; North</button>
+    <button id="btn-ns" class="btn" onclick="setDirection('NS')">North &rarr; South</button>
+</div>
+
+<div class="content">
+    <div class="info-box">
+        <strong>Lite Mode:</strong> Optimized for older devices. <a href="/">Try Full Version</a>
+        <br/><br/>
+        Time: Gate 9 &harr; Gate 2 (3m), Gate 2 &harr; North (5m).
+    </div>
+
+    <div id="schedule-container">
+        <!-- Table goes here -->
+    </div>
+</div>
+
+<div class="footer">
+    &copy; Ckar | Legacy Support
+</div>
+
+<script type="text/javascript">
+    // --- Data Definitions (Embedded for standalone support) ---
+    var DAILY = [0, 1, 2, 3, 4, 5, 6];
+    var WEEKDAYS = [1, 2, 3, 4, 5];
+    var WED_FRI = [3, 5];
+    var WED_THU_FRI = [3, 4, 5];
+    var TUE_WED_THU_FRI = [2, 3, 4, 5];
+    var FRI_ONLY = [5];
+    var WED_ONLY = [3];
+    var THU_ONLY = [4];
+    var TUE_THU = [2, 4];
+    var MON_FRI = [1, 5];
+    var TUE_ONLY = [2];
+
+    var SCHEDULE_S_N = [
+      { t: '07:25', d: DAILY }, { t: '07:25', d: WED_THU_FRI, c: 'red' }, { t: '07:40', d: TUE_WED_THU_FRI, c: 'red' },
+      { t: '07:45', d: DAILY }, { t: '08:10', d: DAILY }, { t: '08:30', d: DAILY }, { t: '09:25', d: DAILY },
+      { t: '09:50', d: FRI_ONLY, c: 'green' }, { t: '09:55', d: WED_FRI, c: 'red' }, { t: '10:00', d: FRI_ONLY, c: 'orange' },
+      { t: '10:05', d: WED_THU_FRI, c: 'red' }, { t: '10:05', d: DAILY }, { t: '10:10', d: [3, 5], c: 'blue' },
+      { t: '10:50', d: DAILY }, { t: '11:55', d: DAILY }, { t: '12:20', d: DAILY }, { t: '13:15', d: DAILY },
+      { t: '13:25', d: [4], c: 'blue' }, { t: '13:30', d: [4, 5], c: 'red' }, { t: '13:35', d: DAILY },
+      { t: '13:35', d: WED_ONLY, c: 'red' }, { t: '13:40', d: [2, 4, 5], c: 'blue' }, { t: '13:45', d: [4, 5], c: 'red' },
+      { t: '14:40', d: FRI_ONLY, c: 'red' }, { t: '15:15', d: DAILY }, { t: '15:50', d: DAILY },
+      { t: '15:55', d: [3, 4, 5], c: 'red' }, { t: '16:05', d: [3, 4], c: 'blue' }, { t: '16:10', d: [3, 4, 5], c: 'orange' },
+      { t: '16:10', d: DAILY }, { t: '16:55', d: FRI_ONLY, c: 'red' }, { t: '17:25', d: DAILY },
+      { t: '18:00', d: DAILY }, { t: '18:30', d: DAILY }, { t: '19:00', d: DAILY }, { t: '19:40', d: DAILY },
+      { t: '20:20', d: DAILY }, { t: '21:00', d: DAILY }, { t: '21:30', d: DAILY }, { t: '22:10', d: DAILY }
+    ];
+
+    var SCHEDULE_N_S = [
+      { t: '07:35', d: WED_THU_FRI, c: 'red' }, { t: '08:00', d: DAILY }, { t: '08:20', d: DAILY },
+      { t: '08:40', d: DAILY }, { t: '08:40', d: WED_ONLY, c: 'red' }, { t: '09:55', d: DAILY },
+      { t: '09:55', d: FRI_ONLY, c: 'blue' }, { t: '10:00', d: [3], c: 'blue' }, { t: '10:05', d: MON_FRI, c: 'red' },
+      { t: '10:10', d: FRI_ONLY, c: 'green' }, { t: '10:20', d: DAILY }, { t: '11:00', d: DAILY },
+      { t: '11:25', d: FRI_ONLY, c: 'red' }, { t: '11:40', d: FRI_ONLY, c: 'red' }, { t: '12:05', d: DAILY },
+      { t: '12:20', d: TUE_ONLY, c: 'red' }, { t: '12:25', d: [3, 5], c: 'red' }, { t: '12:30', d: DAILY },
+      { t: '12:40', d: FRI_ONLY, c: 'red' }, { t: '13:15', d: THU_ONLY, c: 'red' }, { t: '13:25', d: DAILY },
+      { t: '13:45', d: DAILY }, { t: '14:15', d: TUE_THU, c: 'red' }, { t: '15:15', d: TUE_ONLY, c: 'red' },
+      { t: '15:40', d: DAILY }, { t: '15:55', d: [4], c: 'blue' }, { t: '16:00', d: DAILY },
+      { t: '16:05', d: THU_ONLY, c: 'red' }, { t: '16:45', d: DAILY }, { t: '17:25', d: FRI_ONLY, c: 'red' },
+      { t: '17:45', d: DAILY }, { t: '18:15', d: DAILY }, { t: '18:20', d: [4, 5], c: 'red' },
+      { t: '18:35', d: THU_ONLY, c: 'red' }, { t: '18:45', d: DAILY }, { t: '19:10', d: [3, 4, 5], c: 'red' },
+      { t: '19:15', d: DAILY }, { t: '19:25', d: [3, 4, 5], c: 'red' }, { t: '19:40', d: THU_ONLY, c: 'red' },
+      { t: '20:00', d: DAILY }, { t: '20:40', d: DAILY }, { t: '22:00', d: DAILY }
+    ];
+
+    // --- Logic ---
+    var currentDirection = 'SN'; // SN or NS
+
+    function getNowMinutes() {
+        var now = new Date();
+        return now.getHours() * 60 + now.getMinutes();
+    }
+
+    function timeToMin(t) {
+        var parts = t.split(':');
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+
+    function getDayOfWeek() {
+        return new Date().getDay();
+    }
+
+    function hasDay(daysArray, day) {
+        for (var i = 0; i < daysArray.length; i++) {
+            if (daysArray[i] === day) return true;
+        }
+        return false;
+    }
+
+    function renderClock() {
+        var now = new Date();
+        var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        var h = now.getHours();
+        var m = now.getMinutes();
+        var s = now.getSeconds();
+        var timeStr = (h < 10 ? '0'+h : h) + ':' + (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s);
+        document.getElementById('clock').innerHTML = timeStr + ' (' + days[now.getDay()] + ')';
+    }
+
+    function setDirection(dir) {
+        currentDirection = dir;
+        var btnSn = document.getElementById('btn-sn');
+        var btnNs = document.getElementById('btn-ns');
+        
+        if (dir === 'SN') {
+            btnSn.className = 'btn btn-active';
+            btnNs.className = 'btn';
+        } else {
+            btnSn.className = 'btn';
+            btnNs.className = 'btn-active';
+        }
+        renderSchedule();
+    }
+
+    function renderSchedule() {
+        var container = document.getElementById('schedule-container');
+        var data = currentDirection === 'SN' ? SCHEDULE_S_N : SCHEDULE_N_S;
+        var day = getDayOfWeek();
+        var nowMin = getNowMinutes();
+        
+        var html = '<table class="schedule-table"><thead><tr><th>Departure</th><th>Notes</th></tr></thead><tbody>';
+        
+        var hasNext = false;
+        var displayCount = 0;
+
+        // Sort data just in case
+        // ES3 sort
+        data.sort(function(a, b) {
+            return timeToMin(a.t) - timeToMin(b.t);
+        });
+
+        for (var i = 0; i < data.length; i++) {
+            var item = data[i];
+            if (hasDay(item.d, day)) {
+                var itemMin = timeToMin(item.t);
+                var isPast = itemMin < nowMin;
+                var isNext = !isPast && !hasNext;
+                
+                if (isNext) hasNext = true;
+
+                var rowClass = '';
+                if (isPast) rowClass = 'past-bus';
+                if (isNext) rowClass = 'next-bus';
+
+                var note = 'Standard';
+                if (item.c) note = item.c.toUpperCase();
+
+                html += '<tr class="' + rowClass + '">';
+                html += '<td>' + item.t + (isNext ? ' <span style="font-size:10px">(Next)</span>' : '') + '</td>';
+                html += '<td>' + note + '</td>';
+                html += '</tr>';
+                
+                displayCount++;
+            }
+        }
+
+        if (displayCount === 0) {
+            html += '<tr><td colspan="2" style="text-align:center; padding: 20px;">No buses for today.</td></tr>';
+        }
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    // Init
+    window.onload = function() {
+        setInterval(renderClock, 1000);
+        renderClock();
+        renderSchedule();
+        
+        // Auto refresh schedule every minute
+        setInterval(renderSchedule, 60000);
+    };
+
+</script>
+</body>
+</html>

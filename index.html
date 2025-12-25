@@ -3,6 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Legacy Browser Detection & Redirect -->
+    <script>
+      (function() {
+        try {
+          // Check for features required by React 18+ and Vite
+          // If Promise, fetch, or basic ES6 syntax isn't available, redirect.
+          if (!window.Promise || !window.fetch || !Array.prototype.includes) {
+            throw new Error("Legacy browser detected");
+          }
+          // Optional: Check specifically for very old User Agents if feature detection passes but performance is awful (e.g., 3DS)
+          var ua = navigator.userAgent.toLowerCase();
+          if (ua.indexOf('nintendo 3ds') > -1 || ua.indexOf('msie') > -1) {
+             throw new Error("Low power device detected");
+          }
+        } catch (e) {
+          // Prevent redirect loop if we are already there (though this script is in index.html, not lite.html)
+          window.location.href = '/lite.html';
+        }
+      })();
+    </script>
+
     <title>GT Shuttle</title>
     
     <!-- PWA & Mobile -->
