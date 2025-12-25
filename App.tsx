@@ -6,8 +6,8 @@ import DateSelector from './components/DateSelector';
 import PWAPrompt from './components/PWAPrompt';
 import { Direction, BusRun, DayOfWeek } from './types';
 import { SCHEDULE_N_S, SCHEDULE_S_N } from './config/schedules';
-import { STATIONS_N_S, STATIONS_S_N } from './config/stations';
-import { getCurrentTimeMinutes, getBusesForToday } from './utils';
+import { STATIONS_N_S, STATIONS_S_N, STATIONS_N_S_NIGHT, STATIONS_S_N_NIGHT } from './config/stations';
+import { getCurrentTimeMinutes, getBusesForToday, timeToMinutes } from './utils';
 import { Info, ChevronDown } from 'lucide-react';
 import { Language, translate } from './locales';
 
@@ -16,6 +16,9 @@ const App: React.FC = () => {
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(getCurrentTimeMinutes());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [lang, setLang] = useState<Language>('zh'); // Default to Chinese based on request
+
+  // Cutoff time for Gate 9 closure (19:30)
+  const NIGHT_MODE_START_MINUTES = 1170; // 19 * 60 + 30
 
   // Check if the selected date is today
   const isToday = useMemo(() => {
@@ -50,7 +53,39 @@ const App: React.FC = () => {
     return getBusesForToday(rawSchedule, selectedDayOfWeek);
   }, [direction, selectedDayOfWeek]);
 
-  const currentStations = direction === Direction.SOUTH_TO_NORTH ? STATIONS_S_N : STATIONS_N_S;
+  // Determine which station config to use (Day vs Night)
+  const currentStations = useMemo(() => {
+    // Logic: If the *next* bus is after 19:30, or if no next bus but current time is > 19:30, use Night mode.
+    // If viewing a future date, we technically display the "Day" map by default unless we want to split the view,
+    // but for simplicity in this RouteView, we'll base it on the "Next Bus" context.
+    
+    let isNightMode = false;
+
+    if (isToday) {
+      // Find next bus
+      const nextBus = todaysSchedule.find(bus => timeToMinutes(bus.departureTime) > currentTimeMinutes);
+      if (nextBus) {
+        if (timeToMinutes(nextBus.departureTime) >= NIGHT_MODE_START_MINUTES) {
+          isNightMode = true;
+        }
+      } else {
+        // No next bus, check current time
+        if (currentTimeMinutes >= NIGHT_MODE_START_MINUTES) {
+          isNightMode = true;
+        }
+      }
+    } else {
+      // If viewing future date, default to Day mode usually, 
+      // but maybe we could check if the *first* bus of that day is night (unlikely)
+      isNightMode = false;
+    }
+
+    if (direction === Direction.SOUTH_TO_NORTH) {
+      return isNightMode ? STATIONS_S_N_NIGHT : STATIONS_S_N;
+    } else {
+      return isNightMode ? STATIONS_N_S_NIGHT : STATIONS_N_S;
+    }
+  }, [direction, isToday, todaysSchedule, currentTimeMinutes]);
 
   const toggleDirection = () => {
     setDirection(prev => prev === Direction.SOUTH_TO_NORTH ? Direction.NORTH_TO_SOUTH : Direction.SOUTH_TO_NORTH);

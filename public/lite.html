@@ -51,7 +51,7 @@
 
     <div class="info-box">
         Simple version for legacy devices.<br/>
-        Est. Time: G9&harr;G2 (3m), G2&harr;N (5m).
+        <b>Note:</b> After 19:30, Gate 9 is closed. Buses run Gate 2 &harr; North only.
     </div>
 
     <div id="schedule-container">
@@ -101,6 +101,18 @@
         { name: 'SC Gate 2', dist: 5 },
         { name: 'SC Gate 9', dist: 8 }
     ];
+    
+    // Night Mode Stations (> 19:30)
+    // SN: Gate 2 (0) -> NC Main (5)
+    var STATIONS_SN_NIGHT = [
+        { name: 'SC Gate 2', dist: 0 },
+        { name: 'NC Main', dist: 5 }
+    ];
+    // NS: NC Main (0) -> SC Gate 2 (5)
+    var STATIONS_NS_NIGHT = [
+        { name: 'NC Main', dist: 0 },
+        { name: 'SC Gate 2', dist: 5 }
+    ];
 
     var SCHEDULE_S_N = [
       { t: '07:25', d: DAILY }, { t: '07:25', d: WED_THU_FRI, c: 'red' }, { t: '07:40', d: TUE_WED_THU_FRI, c: 'red' },
@@ -136,6 +148,7 @@
 
     // --- State & Logic ---
     var currentDirection = 'SN'; // SN or NS
+    var NIGHT_THRESHOLD = 1170; // 19:30 in minutes
 
     function getNowMinutes() {
         var now = new Date();
@@ -188,12 +201,22 @@
     function renderLiveStatus() {
         var container = document.getElementById('live-status');
         var content = document.getElementById('live-content');
-        var data = currentDirection === 'SN' ? SCHEDULE_S_N : SCHEDULE_N_S;
-        var stations = currentDirection === 'SN' ? STATIONS_SN : STATIONS_NS;
-        var totalDur = stations[stations.length - 1].dist;
         
-        var day = getDayOfWeek();
         var nowMin = getNowMinutes();
+        var isNight = nowMin >= NIGHT_THRESHOLD;
+
+        // Choose station list based on time and direction
+        var stations;
+        if (currentDirection === 'SN') {
+            stations = isNight ? STATIONS_SN_NIGHT : STATIONS_SN;
+        } else {
+            stations = isNight ? STATIONS_NS_NIGHT : STATIONS_NS;
+        }
+
+        var data = currentDirection === 'SN' ? SCHEDULE_S_N : SCHEDULE_N_S;
+        var totalDur = stations[stations.length - 1].dist;
+        var day = getDayOfWeek();
+        
         var activeHtml = '';
         var hasActive = false;
 
@@ -201,6 +224,10 @@
             var bus = data[i];
             if (hasDay(bus.d, day)) {
                 var depMin = timeToMin(bus.t);
+                
+                // If it is night, the "departure time" in schedule aligns with the FIRST station of the NIGHT list.
+                // e.g. SN 19:40 departs Gate 2.
+                
                 var elapsed = nowMin - depMin;
                 
                 // If bus is active (elapsed >= 0 and elapsed <= total duration + 2 min buffer)
