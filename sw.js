@@ -1,10 +1,9 @@
-const CACHE_NAME = 'campus-shuttle-v2';
+const CACHE_NAME = 'campus-shuttle-v3';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
