@@ -8,7 +8,7 @@ import { Direction, BusRun, DayOfWeek } from './types';
 import { SCHEDULE_N_S, SCHEDULE_S_N } from './config/schedules';
 import { STATIONS_N_S, STATIONS_S_N, STATIONS_N_S_NIGHT, STATIONS_S_N_NIGHT } from './config/stations';
 import { getCurrentTimeMinutes, getBusesForToday, timeToMinutes } from './utils';
-import { Info, ChevronDown } from 'lucide-react';
+import { Info, ChevronDown, RotateCcw } from 'lucide-react';
 import { Language, translate } from './locales';
 
 const App: React.FC = () => {
@@ -16,6 +16,9 @@ const App: React.FC = () => {
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(getCurrentTimeMinutes());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [lang, setLang] = useState<Language>('zh'); // Default to Chinese based on request
+  
+  // State for previewing a specific bus run (overrides live view)
+  const [previewBus, setPreviewBus] = useState<BusRun | null>(null);
 
   // Cutoff time for Gate 9 closure (19:30)
   const NIGHT_MODE_START_MINUTES = 1170; // 19 * 60 + 30
@@ -42,6 +45,11 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [isToday]);
 
+  // Reset preview when direction or date changes
+  useEffect(() => {
+    setPreviewBus(null);
+  }, [direction, selectedDate]);
+
   // Determine the DayOfWeek for the selected date
   const selectedDayOfWeek: DayOfWeek = useMemo(() => {
     return selectedDate.getDay() as DayOfWeek;
@@ -55,14 +63,15 @@ const App: React.FC = () => {
 
   // Determine which station config to use (Day vs Night)
   const currentStations = useMemo(() => {
-    // Logic: If the *next* bus is after 19:30, or if no next bus but current time is > 19:30, use Night mode.
-    // If viewing a future date, we technically display the "Day" map by default unless we want to split the view,
-    // but for simplicity in this RouteView, we'll base it on the "Next Bus" context.
-    
     let isNightMode = false;
 
-    if (isToday) {
-      // Find next bus
+    if (previewBus) {
+        // If previewing, stick to that bus's schedule
+        if (timeToMinutes(previewBus.departureTime) >= NIGHT_MODE_START_MINUTES) {
+            isNightMode = true;
+        }
+    } else if (isToday) {
+      // Find next bus logic
       const nextBus = todaysSchedule.find(bus => timeToMinutes(bus.departureTime) > currentTimeMinutes);
       if (nextBus) {
         if (timeToMinutes(nextBus.departureTime) >= NIGHT_MODE_START_MINUTES) {
@@ -75,9 +84,8 @@ const App: React.FC = () => {
         }
       }
     } else {
-      // If viewing future date, default to Day mode usually, 
-      // but maybe we could check if the *first* bus of that day is night (unlikely)
-      isNightMode = false;
+      // Future date defaults
+      isNightMode = false; 
     }
 
     if (direction === Direction.SOUTH_TO_NORTH) {
@@ -85,10 +93,16 @@ const App: React.FC = () => {
     } else {
       return isNightMode ? STATIONS_N_S_NIGHT : STATIONS_N_S;
     }
-  }, [direction, isToday, todaysSchedule, currentTimeMinutes]);
+  }, [direction, isToday, todaysSchedule, currentTimeMinutes, previewBus]);
 
   const toggleDirection = () => {
     setDirection(prev => prev === Direction.SOUTH_TO_NORTH ? Direction.NORTH_TO_SOUTH : Direction.SOUTH_TO_NORTH);
+  };
+
+  const handleBusSelect = (bus: BusRun) => {
+    setPreviewBus(bus);
+    // Auto-scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const formattedDate = selectedDate.toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-CN', { month: 'short', day: 'numeric', weekday: 'short' });
@@ -99,7 +113,7 @@ const App: React.FC = () => {
 
       <DateSelector selectedDate={selectedDate} onSelectDate={setSelectedDate} lang={lang} />
 
-      <main className="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
+      <main className="flex-1 max-w-md mx-auto w-full p-4 space-y-4 relative">
         
         {/* Direction Switcher */}
         <button 
@@ -125,6 +139,19 @@ const App: React.FC = () => {
           </div>
         </div>
 
+        {/* Preview Mode Alert / Resume Button */}
+        {previewBus && (
+            <div className="flex justify-center sticky top-[130px] z-30 pointer-events-none">
+                <button 
+                    onClick={() => setPreviewBus(null)}
+                    className="pointer-events-auto shadow-lg bg-amber-600 text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-bold hover:bg-amber-700 transition-colors animate-in fade-in slide-in-from-bottom-2"
+                >
+                    <RotateCcw size={16} />
+                    {translate(lang, 'resume_live')}
+                </button>
+            </div>
+        )}
+
         {/* Main Timeline View */}
         <RouteView 
           direction={direction}
@@ -133,6 +160,7 @@ const App: React.FC = () => {
           currentTimeMinutes={currentTimeMinutes}
           lang={lang}
           isLive={isToday}
+          previewBus={previewBus}
         />
 
         {/* Upcoming Schedule List */}
@@ -141,6 +169,8 @@ const App: React.FC = () => {
           currentTimeMinutes={currentTimeMinutes}
           lang={lang}
           isLive={isToday}
+          onBusSelect={handleBusSelect}
+          selectedBusId={previewBus?.id || null}
         />
 
         {/* Footer / Stats */}

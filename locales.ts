@@ -48,6 +48,11 @@ export const translations = {
     // Disclaimer
     disclaimer_title: "Disclaimer",
     disclaimer_text: "This project is based on open data for reference only and is not affiliated with any official organization. Traffic information and schedules are estimates. The developer assumes no liability for any issues arising from use. Please prioritize safety and actual road conditions.",
+    // Preview Mode
+    preview_mode: "Preview Mode",
+    selected_run: "Selected Run",
+    resume_live: "Resume Live",
+    viewing_run: "Viewing run at {time}",
   },
   zh: {
     app_title: "GT Shuttle",
@@ -96,6 +101,11 @@ export const translations = {
     // Disclaimer
     disclaimer_title: "免责声明",
     disclaimer_text: "本项目完全基于公开数据开发，所有内容均来源于公开渠道，仅供学习、研究或参考之用。本项目与相关学校、教育机构及其官方组织无任何关联，不代表其立场、观点或背书。开发者不对因使用本项目内容而产生的任何直接或间接后果承担责任。如有疑问或版权问题，请及时联系开发者进行处理。本应用所提供的路线规划、交通信息及出行建议仅供参考，实际路况、天气、交通管制等因素可能随时发生变化。用户应自行判断并承担出行过程中的一切风险，注意人身与财产安全，遵守当地法律法规。本应用及开发者不对用户因依赖应用信息而产生的任何安全事故、损失或损害承担责任。",
+    // Preview Mode
+    preview_mode: "预览模式",
+    selected_run: "选定班次",
+    resume_live: "恢复实时",
+    viewing_run: "正在预览 {time} 班次",
   }
 };
 

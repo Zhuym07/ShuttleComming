@@ -9,9 +9,11 @@ interface ScheduleListProps {
   currentTimeMinutes: number;
   lang: Language;
   isLive: boolean;
+  onBusSelect: (bus: BusRun) => void;
+  selectedBusId: string | null;
 }
 
-const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinutes, lang, isLive }) => {
+const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinutes, lang, isLive, onBusSelect, selectedBusId }) => {
   const [showAll, setShowAll] = useState(!isLive); // Default to show all if not in live mode
 
   // If not live (viewing future), all buses are "upcoming" effectively, or we just show the list.
@@ -77,19 +79,29 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinute
                     {displayedBuses.map((bus) => {
                         const busMinutes = timeToMinutes(bus.departureTime);
                         const isPast = isLive && busMinutes < currentTimeMinutes;
+                        const isSelected = bus.id === selectedBusId;
 
                         return (
-                            <tr key={bus.id} className={`group transition-colors ${isPast ? 'bg-gray-50/50' : 'hover:bg-brand-50/30'}`}>
+                            <tr 
+                                key={bus.id} 
+                                onClick={() => onBusSelect(bus)}
+                                className={`group transition-colors cursor-pointer 
+                                    ${isSelected 
+                                        ? 'bg-amber-50 ring-1 ring-inset ring-amber-300' 
+                                        : (isPast ? 'bg-gray-50/50' : 'hover:bg-brand-50/30')
+                                    }`
+                                }
+                            >
                                 <td className="px-5 py-3">
                                     <div className="flex items-center gap-3">
-                                        <span className={`font-mono text-base font-bold ${isPast ? 'text-gray-400' : 'text-gray-900'}`}>
+                                        <span className={`font-mono text-base font-bold ${isSelected ? 'text-amber-700' : (isPast ? 'text-gray-400' : 'text-gray-900')}`}>
                                             {bus.departureTime}
                                         </span>
                                     </div>
                                 </td>
                                 <td className="px-5 py-3">
                                     <div className="flex items-center gap-2">
-                                        {isPast ? (
+                                        {isPast && !isSelected ? (
                                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-400 border border-gray-200 uppercase tracking-wide">
                                                 {translate(lang, 'departed')}
                                             </span>

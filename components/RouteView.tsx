@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { BusRun, Direction, Station, LiveBus } from '../types';
 import { timeToMinutes, minutesToTime } from '../utils';
-import { Bus, Clock, Radio } from 'lucide-react';
+import { Bus, Clock, Radio, Eye } from 'lucide-react';
 import { Language, translate } from '../locales';
 
 interface RouteViewProps {
@@ -11,15 +11,16 @@ interface RouteViewProps {
   currentTimeMinutes: number;
   lang: Language;
   isLive: boolean; // Only show live bus positions if viewing "Today"
+  previewBus: BusRun | null;
 }
 
-const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, currentTimeMinutes, lang, isLive }) => {
+const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, currentTimeMinutes, lang, isLive, previewBus }) => {
   // Calculate total route duration (last station distance)
   const totalDuration = stations[stations.length - 1].distanceFromStart;
 
-  // Identify active buses
+  // Identify active buses (Only when NOT in preview mode)
   const activeBuses: LiveBus[] = useMemo(() => {
-    if (!isLive) return [];
+    if (!isLive || previewBus) return []; // Disable live tracking during preview
 
     const active: LiveBus[] = [];
     
@@ -38,15 +39,16 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
       }
     });
     return active;
-  }, [schedule, currentTimeMinutes, totalDuration, isLive]);
+  }, [schedule, currentTimeMinutes, totalDuration, isLive, previewBus]);
 
-  // Identify next scheduled bus
-  const nextBus = useMemo(() => {
+  // Determine which bus to display in the header (Next or Previewed)
+  const displayBus = useMemo(() => {
+    if (previewBus) return previewBus;
     if (!isLive) {
         return schedule.length > 0 ? schedule[0] : undefined;
     }
     return schedule.find(bus => timeToMinutes(bus.departureTime) > currentTimeMinutes);
-  }, [schedule, currentTimeMinutes, isLive]);
+  }, [schedule, currentTimeMinutes, isLive, previewBus]);
 
   // Helper to get translated station name
   const getStationName = (station: Station) => {
@@ -56,7 +58,8 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
 
   // Helper to get dynamic countdown for a station
   const getLiveArrivalInfo = (station: Station) => {
-    if (!isLive || activeBuses.length === 0) return null;
+    // Disable live countdown in preview mode
+    if (!isLive || activeBuses.length === 0 || previewBus) return null;
 
     // Find the closest bus that hasn't passed this station yet
     // Filter buses where currentMinutesFromStart < station.distanceFromStart
@@ -74,7 +77,8 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
 
   // Helper to render bus icon on timeline
   const renderBusOnTimeline = (stationIndex: number) => {
-    if (!isLive) return null;
+    // Do not render moving buses in preview mode
+    if (!isLive || previewBus) return null;
 
     const currentStationDist = stations[stationIndex].distanceFromStart;
     const nextStationDist = stations[stationIndex + 1]?.distanceFromStart;
@@ -125,30 +129,35 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
 
   // Calculate estimated arrival time string for a station (Static Schedule based)
   const getEstimatedArrivalTime = (station: Station) => {
-    if (!nextBus) return null;
-    const baseTime = timeToMinutes(nextBus.departureTime);
+    if (!displayBus) return null;
+    const baseTime = timeToMinutes(displayBus.departureTime);
     const arrivalTime = baseTime + station.distanceFromStart;
     return minutesToTime(arrivalTime);
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className={`rounded-xl shadow-sm border overflow-hidden transition-colors ${previewBus ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-100'}`}>
       
       {/* Next Bus Info Header */}
-      <div className="bg-brand-50 p-4 border-b border-brand-100 flex items-center justify-between">
-        <div className="flex items-center space-x-2 text-brand-800">
-          <Clock size={18} />
+      <div className={`p-4 border-b flex items-center justify-between ${previewBus ? 'bg-amber-100/50 border-amber-200' : 'bg-brand-50 border-brand-100'}`}>
+        <div className={`flex items-center space-x-2 ${previewBus ? 'text-amber-800' : 'text-brand-800'}`}>
+          {previewBus ? <Eye size={18} /> : <Clock size={18} />}
           <span className="font-semibold text-sm uppercase tracking-wide">
-             {isLive ? translate(lang, 'next_departure') : translate(lang, 'timetable')}
+             {previewBus 
+                ? translate(lang, 'selected_run') 
+                : (isLive ? translate(lang, 'next_departure') : translate(lang, 'timetable'))
+             }
           </span>
         </div>
         <div className="text-right">
-          {nextBus ? (
+          {displayBus ? (
             <>
-              <span className="text-2xl font-bold text-brand-700">{nextBus.departureTime}</span>
-              {isLive && (
+              <span className={`text-2xl font-bold ${previewBus ? 'text-amber-700' : 'text-brand-700'}`}>
+                {displayBus.departureTime}
+              </span>
+              {isLive && !previewBus && (
                   <span className="ml-2 text-xs font-medium text-brand-500 px-2 py-0.5 bg-brand-100 rounded-full">
-                    {timeToMinutes(nextBus.departureTime) - currentTimeMinutes} {translate(lang, 'min_suffix')}
+                    {timeToMinutes(displayBus.departureTime) - currentTimeMinutes} {translate(lang, 'min_suffix')}
                   </span>
               )}
             </>
@@ -176,11 +185,15 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
               {!isLast && renderBusOnTimeline(index)}
 
               {/* Station Node */}
-              <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full border-4 flex items-center justify-center shadow-sm transition-colors ${liveInfo ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-300'}`}>
+              <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full border-4 flex items-center justify-center shadow-sm transition-colors ${
+                  liveInfo ? 'bg-brand-50 border-brand-500' : 
+                  (previewBus ? 'bg-amber-50 border-amber-400' : 'bg-white border-gray-300')
+              }`}>
                 {liveInfo ? (
                    <Radio size={14} className="text-brand-600 animate-pulse" />
                 ) : (
-                   <div className="w-2.5 h-2.5 rounded-full bg-gray-400 group-first:bg-brand-600 group-last:bg-brand-600"></div>
+                   // If preview mode and this is the start station, maybe show a dot?
+                   <div className={`w-2.5 h-2.5 rounded-full ${previewBus ? 'bg-amber-600' : 'bg-gray-400 group-first:bg-brand-600 group-last:bg-brand-600'}`}></div>
                 )}
               </div>
 
@@ -200,8 +213,9 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
                       <span>
                         {index === 0 ? translate(lang, 'start') : `+${station.distanceFromStart} ${translate(lang, 'mins')}`}
                       </span>
+                      {/* Always show scheduled time if available, especially in preview mode */}
                       {estimatedTime && !liveInfo && (
-                        <span className="text-gray-400 font-medium font-mono">
+                        <span className={`font-medium font-mono ${previewBus ? 'text-amber-700 font-bold' : 'text-gray-400'}`}>
                           ({estimatedTime})
                         </span>
                       )}
