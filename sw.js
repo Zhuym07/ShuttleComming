@@ -1,15 +1,20 @@
-const CACHE_NAME = 'campus-shuttle-v1';
+const CACHE_NAME = 'campus-shuttle-v2';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Force activation
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       // Basic caching of main entry points
-      return cache.addAll(URLS_TO_CACHE);
+      return cache.addAll(URLS_TO_CACHE).catch(err => {
+        console.warn('Cache addAll failed', err);
+      });
     })
   );
 });
@@ -34,6 +39,6 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Take control immediately
   );
 });
