@@ -7,38 +7,55 @@ interface PWAPromptProps {
 }
 
 const PWAPrompt: React.FC<PWAPromptProps> = ({ lang }) => {
-  const [show, setShow] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
-    // 1. Check if app is already standalone
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone) return;
+    // Safety check: wrap in try-catch to prevent white screen if localStorage access is denied (e.g. iOS private mode)
+    const checkPromptStatus = () => {
+      try {
+        // 1. Check if app is already standalone
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+        if (isStandalone) return;
 
-    // 2. Check if user dismissed it recently
-    const isDismissed = localStorage.getItem('pwa_prompt_dismissed');
-    if (isDismissed) return;
+        // 2. Check if user dismissed it
+        const isDismissed = localStorage.getItem('pwa_prompt_dismissed');
+        if (isDismissed) return;
 
-    // 3. Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const ios = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(ios);
+        // 3. Detect iOS
+        const userAgent = window.navigator.userAgent.toLowerCase();
+        const ios = /iphone|ipad|ipod/.test(userAgent);
+        setIsIOS(ios);
+
+        if (ios) {
+          // iOS doesn't support beforeinstallprompt, show after delay
+          // Use a slight delay to ensure the page is fully interactive first
+          setTimeout(() => {
+            setShouldRender(true);
+            // Small delay after render to trigger CSS transition
+            requestAnimationFrame(() => setIsOpen(true));
+          }, 2000);
+        } else {
+          // Android/Desktop logic handled by event listener
+        }
+      } catch (e) {
+        console.warn('PWA prompt check failed:', e);
+      }
+    };
+
+    checkPromptStatus();
 
     // 4. Handle Android/Chrome "beforeinstallprompt"
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShow(true);
+      setShouldRender(true);
+      requestAnimationFrame(() => setIsOpen(true));
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // 5. If iOS, show after a short delay (since we don't get an event)
-    if (ios) {
-      const timer = setTimeout(() => setShow(true), 3000);
-      return () => clearTimeout(timer);
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -50,21 +67,31 @@ const PWAPrompt: React.FC<PWAPromptProps> = ({ lang }) => {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
-        setShow(false);
+        setIsOpen(false);
+        setTimeout(() => setShouldRender(false), 500);
       }
       setDeferredPrompt(null);
     }
   };
 
   const handleDismiss = () => {
-    setShow(false);
-    localStorage.setItem('pwa_prompt_dismissed', 'true');
+    setIsOpen(false);
+    setTimeout(() => setShouldRender(false), 500);
+    try {
+      localStorage.setItem('pwa_prompt_dismissed', 'true');
+    } catch (e) {
+      // Ignore storage errors
+    }
   };
 
-  if (!show) return null;
+  if (!shouldRender) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-5 duration-500">
+    <div 
+      className={`fixed bottom-4 left-4 right-4 z-50 transition-all duration-500 transform ${
+        isOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'
+      }`}
+    >
       <div className="bg-white rounded-xl shadow-2xl border border-gray-100 p-4 flex flex-col gap-3 relative overflow-hidden">
         {/* Decorative background element */}
         <div className="absolute top-0 right-0 w-20 h-20 bg-brand-50 rounded-bl-full -z-0 opacity-50"></div>
