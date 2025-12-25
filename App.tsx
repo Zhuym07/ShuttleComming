@@ -8,7 +8,7 @@ import { Direction, BusRun, DayOfWeek } from './types';
 import { SCHEDULE_N_S, SCHEDULE_S_N } from './config/schedules';
 import { STATIONS_N_S, STATIONS_S_N } from './config/stations';
 import { getCurrentTimeMinutes, getBusesForToday } from './utils';
-import { Info } from 'lucide-react';
+import { Info, ChevronDown } from 'lucide-react';
 import { Language, translate } from './locales';
 
 const App: React.FC = () => {
@@ -109,11 +109,21 @@ const App: React.FC = () => {
         />
 
         {/* Footer / Stats */}
-        <div className="text-center text-gray-400 text-xs py-4 flex flex-col gap-1">
+        <div className="text-center text-gray-400 text-xs py-4 flex flex-col gap-1 items-center">
           <p>{translate(lang, 'displaying_runs', { count: todaysSchedule.length, date: formattedDate })}</p>
           <p>
             © Ckar | <a href="/lite.html" className="underline hover:text-brand-600">Lite Version (Legacy)</a>
           </p>
+
+          <details className="w-full max-w-[300px] mt-4 group">
+            <summary className="cursor-pointer list-none flex items-center justify-center gap-1 text-[10px] text-gray-300 hover:text-gray-500 transition-colors">
+              <span>{translate(lang, 'disclaimer_title')}</span>
+              <ChevronDown size={10} className="transform transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-2 text-[10px] leading-relaxed text-gray-400 text-justify bg-gray-100 p-3 rounded-lg border border-gray-200">
+               {translate(lang, 'disclaimer_text')}
+            </div>
+          </details>
         </div>
 
       </main>
