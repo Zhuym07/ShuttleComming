@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { BusRun, Direction, Station, LiveBus } from '../types';
 import { timeToMinutes, minutesToTime } from '../utils';
-import { Bus, Clock } from 'lucide-react';
+import { Bus, Clock, Radio } from 'lucide-react';
 import { Language, translate } from '../locales';
 
 interface RouteViewProps {
@@ -54,6 +54,24 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
     return translate(lang, key);
   };
 
+  // Helper to get dynamic countdown for a station
+  const getLiveArrivalInfo = (station: Station) => {
+    if (!isLive || activeBuses.length === 0) return null;
+
+    // Find the closest bus that hasn't passed this station yet
+    // Filter buses where currentMinutesFromStart < station.distanceFromStart
+    const incomingBuses = activeBuses.filter(b => b.currentMinutesFromStart < station.distanceFromStart);
+    
+    if (incomingBuses.length === 0) return null;
+
+    // Get the one closest to the station (largest currentMinutesFromStart)
+    const closestBus = incomingBuses.sort((a, b) => b.currentMinutesFromStart - a.currentMinutesFromStart)[0];
+    const minutesToArrival = station.distanceFromStart - closestBus.currentMinutesFromStart;
+
+    if (minutesToArrival <= 0.5) return { text: translate(lang, 'arriving_in') + ' < 1 ' + translate(lang, 'min_suffix'), urgent: true };
+    return { text: Math.ceil(minutesToArrival) + ' ' + translate(lang, 'min_suffix'), urgent: minutesToArrival < 2 };
+  };
+
   // Helper to render bus icon on timeline
   const renderBusOnTimeline = (stationIndex: number) => {
     if (!isLive) return null;
@@ -97,11 +115,6 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
                   <div className={`relative bg-white p-1 rounded-full shadow-md border-2 z-20 ${bus.label === 'red' ? 'border-red-500 text-red-500' : 'border-brand-600 text-brand-600'}`}>
                     <Bus size={20} className="relative z-10" />
                   </div>
-                  <div className="absolute left-full ml-3 bg-brand-600 text-white text-xs px-2 py-1 rounded shadow-sm opacity-90 whitespace-nowrap z-10">
-                    {translate(lang, 'arriving_in')} {(nextStationDist ? (nextStationDist - bus.currentMinutesFromStart) : 0).toFixed(0)} {translate(lang, 'min_suffix')}
-                    {/* Tiny arrow pointing left */}
-                    <div className="absolute top-1/2 -left-1 -mt-1 border-4 border-transparent border-r-brand-600"></div>
-                  </div>
               </div>
             </div>
           );
@@ -110,7 +123,7 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
     );
   };
 
-  // Calculate estimated arrival time string for a station
+  // Calculate estimated arrival time string for a station (Static Schedule based)
   const getEstimatedArrivalTime = (station: Station) => {
     if (!nextBus) return null;
     const baseTime = timeToMinutes(nextBus.departureTime);
@@ -150,32 +163,44 @@ const RouteView: React.FC<RouteViewProps> = ({ direction, schedule, stations, cu
         {stations.map((station, index) => {
           const isLast = index === stations.length - 1;
           const estimatedTime = getEstimatedArrivalTime(station);
+          const liveInfo = getLiveArrivalInfo(station);
           
           return (
             <div key={station.id} className="relative flex pb-12 last:pb-0 group">
-              {/* Vertical Line - Centered at 20px (left-[18px] + 2px center of 4px line) */}
+              {/* Vertical Line */}
               {!isLast && (
                 <div className="absolute left-[18px] top-8 bottom-0 w-1 bg-gray-200 group-last:hidden z-0"></div>
               )}
 
-              {/* Bus on Timeline (Moved to root of row for proper alignment) */}
+              {/* Bus on Timeline */}
               {!isLast && renderBusOnTimeline(index)}
 
-              {/* Station Node - Centered at 20px (w-10 is 40px, center 20) */}
-              <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center group-first:border-brand-500 group-last:border-brand-500 shadow-sm transition-colors">
-                <div className="w-2.5 h-2.5 rounded-full bg-gray-400 group-first:bg-brand-600 group-last:bg-brand-600"></div>
+              {/* Station Node */}
+              <div className={`relative z-10 flex-shrink-0 w-10 h-10 rounded-full border-4 flex items-center justify-center shadow-sm transition-colors ${liveInfo ? 'bg-brand-50 border-brand-500' : 'bg-white border-gray-300'}`}>
+                {liveInfo ? (
+                   <Radio size={14} className="text-brand-600 animate-pulse" />
+                ) : (
+                   <div className="w-2.5 h-2.5 rounded-full bg-gray-400 group-first:bg-brand-600 group-last:bg-brand-600"></div>
+                )}
               </div>
 
               {/* Station Info */}
               <div className="ml-4 pt-1 flex-1 relative">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-gray-800 text-lg leading-tight">{getStationName(station)}</h3>
+                    <h3 className="font-bold text-gray-800 text-lg leading-tight flex items-center gap-2">
+                        {getStationName(station)}
+                        {liveInfo && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${liveInfo.urgent ? 'bg-red-100 text-red-600' : 'bg-brand-100 text-brand-700'}`}>
+                                {liveInfo.text}
+                            </span>
+                        )}
+                    </h3>
                     <p className="text-xs text-gray-500 mt-1 uppercase tracking-wide flex items-center gap-1">
                       <span>
                         {index === 0 ? translate(lang, 'start') : `+${station.distanceFromStart} ${translate(lang, 'mins')}`}
                       </span>
-                      {estimatedTime && (
+                      {estimatedTime && !liveInfo && (
                         <span className="text-gray-400 font-medium font-mono">
                           ({estimatedTime})
                         </span>
