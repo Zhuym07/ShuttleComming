@@ -3,6 +3,7 @@ import Header from './components/Header';
 import RouteView from './components/RouteView';
 import ScheduleList from './components/ScheduleList';
 import DateSelector from './components/DateSelector';
+import PWAPrompt from './components/PWAPrompt';
 import { Direction, BusRun, DayOfWeek } from './types';
 import { SCHEDULE_N_S, SCHEDULE_S_N, STATIONS_N_S, STATIONS_S_N } from './constants';
 import { getCurrentTimeMinutes, getBusesForToday } from './utils';
@@ -112,6 +113,9 @@ const App: React.FC = () => {
         </div>
 
       </main>
+      
+      {/* PWA Installation Prompt */}
+      <PWAPrompt lang={lang} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 {
-  "name": "Campus Shuttle Live",
-  "short_name": "Shuttle",
+  "name": "GT Shuttle",
+  "short_name": "GT Shuttle",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f3f4f6",

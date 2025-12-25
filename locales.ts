@@ -2,7 +2,7 @@ export type Language = 'en' | 'zh';
 
 export const translations = {
   en: {
-    app_title: "Campus Shuttle",
+    app_title: "GT Shuttle",
     subtitle: "Real-time Tracker",
     direction_sn: "South ➔ North",
     direction_ns: "North ➔ South",
@@ -38,9 +38,16 @@ export const translations = {
     day_4: "Thu",
     day_5: "Fri",
     day_6: "Sat",
+    // PWA Prompt
+    install_app: "Install App",
+    install_desc: "Add to Home Screen for quick access.",
+    install_ios_instr: "Tap share icon",
+    install_ios_action: "then 'Add to Home Screen'",
+    install_btn: "Install",
+    dismiss: "Later",
   },
   zh: {
-    app_title: "校园穿梭巴士",
+    app_title: "GT Shuttle",
     subtitle: "实时追踪",
     direction_sn: "南校区 ➔ 北校区",
     direction_ns: "北校区 ➔ 南校区",
@@ -76,6 +83,13 @@ export const translations = {
     day_4: "周四",
     day_5: "周五",
     day_6: "周六",
+    // PWA Prompt
+    install_app: "安装应用",
+    install_desc: "添加到主屏幕，使用更流畅。",
+    install_ios_instr: "点击分享按钮",
+    install_ios_action: "然后选择“添加到主屏幕”",
+    install_btn: "安装",
+    dismiss: "稍后",
   }
 };
 
