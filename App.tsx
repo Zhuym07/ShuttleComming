@@ -106,6 +106,9 @@ const App: React.FC = () => {
   };
 
   const formattedDate = selectedDate.toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-CN', { month: 'short', day: 'numeric', weekday: 'short' });
+  const effectiveText = lang === 'en'
+    ? 'Effective: May 12, 2026 (Teaching Week 1-13)'
+    : '生效日期：2026年5月12日（教学周第1-13周）';
 
   return (
     <div className="min-h-screen pb-12 flex flex-col font-sans bg-gray-50">
@@ -135,7 +138,8 @@ const App: React.FC = () => {
           <Info className="text-yellow-600 flex-shrink-0 mt-0.5" size={16} />
           <div className="text-xs text-yellow-800">
             <p className="font-semibold mb-1">{translate(lang, 'schedule_info_title')}</p>
-             {translate(lang, 'schedule_info_text')}
+            <p>{translate(lang, 'schedule_info_text')}</p>
+            <p className="mt-1 font-semibold">{effectiveText}</p>
           </div>
         </div>
 
