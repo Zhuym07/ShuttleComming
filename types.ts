@@ -43,6 +43,22 @@ export interface RouteDefinition {
   nightModeStartMinutes: number;
 }
 
+export interface DirectionSummary {
+  direction: Direction;
+  routeId: RouteId;
+  schedule: BusRun[];
+  nextBus?: BusRun;
+  activeRuns: number;
+  upcomingRuns: number;
+  isServiceEnded: boolean;
+}
+
+export interface ShuttleOverviewState {
+  currentTimeMinutes: number;
+  isToday: boolean;
+  summaries: Record<RouteId, DirectionSummary>;
+}
+
 export interface LiveBus {
   runId: string;
   currentMinutesFromStart: number;

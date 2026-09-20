@@ -16,20 +16,21 @@ interface UseShuttleStateOptions {
   direction: Direction;
   selectedDate: Date;
   previewBus: BusRun | null;
+  currentTimeMinutes?: number;
 }
 
-export const useShuttleState = ({ direction, selectedDate, previewBus }: UseShuttleStateOptions): ShuttleViewState => {
-  const [currentTimeMinutes, setCurrentTimeMinutes] = useState(getCurrentTimeMinutes());
+export const useShuttleState = ({ direction, selectedDate, previewBus, currentTimeMinutes: sharedCurrentTimeMinutes }: UseShuttleStateOptions): ShuttleViewState => {
+  const [localCurrentTimeMinutes, setLocalCurrentTimeMinutes] = useState(getCurrentTimeMinutes());
+  const currentTimeMinutes = sharedCurrentTimeMinutes ?? localCurrentTimeMinutes;
   const isToday = isSameCalendarDate(selectedDate, new Date());
   const selectedDayOfWeek = selectedDate.getDay() as DayOfWeek;
   const route = getRouteForDirection(direction);
 
   useEffect(() => {
-    setCurrentTimeMinutes(getCurrentTimeMinutes());
-    if (!isToday) return undefined;
-    const interval = window.setInterval(() => setCurrentTimeMinutes(getCurrentTimeMinutes()), 30_000);
+    if (sharedCurrentTimeMinutes !== undefined || !isToday) return undefined;
+    const interval = window.setInterval(() => setLocalCurrentTimeMinutes(getCurrentTimeMinutes()), 30_000);
     return () => window.clearInterval(interval);
-  }, [isToday]);
+  }, [isToday, sharedCurrentTimeMinutes]);
 
   const schedule = useMemo(() => getScheduleForDay(route.schedule, selectedDayOfWeek), [route.schedule, selectedDayOfWeek]);
   const nextBus = useMemo(

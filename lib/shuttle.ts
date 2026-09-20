@@ -1,4 +1,4 @@
-import { BusRun, DayOfWeek, Direction, LiveBus, RouteMode, Station } from '../types';
+import { BusRun, DayOfWeek, Direction, DirectionSummary, LiveBus, RouteMode, RouteId, Station } from '../types';
 import { getRouteId, ROUTES } from '../config/routes';
 import { timeToMinutes } from '../utils';
 
@@ -115,6 +115,47 @@ export const getShuttleSummary = (
     upcomingRuns: upcoming.length,
     activeRuns,
     nextDeparture: upcoming[0]?.departureTime,
+  };
+};
+
+
+export const getDirectionSummary = ({
+  routeId,
+  currentTimeMinutes,
+  selectedDayOfWeek,
+  isToday,
+}: {
+  routeId: RouteId;
+  currentTimeMinutes: number;
+  selectedDayOfWeek: DayOfWeek;
+  isToday: boolean;
+}): DirectionSummary => {
+  const route = ROUTES[routeId];
+  const schedule = getScheduleForDay(route.schedule, selectedDayOfWeek);
+  const nextBus = getNextBus(schedule, currentTimeMinutes, isToday);
+  const routeMode = isToday && currentTimeMinutes >= route.nightModeStartMinutes ? 'night' : 'day';
+  const stations = routeMode === 'night' ? route.nightStations : route.dayStations;
+  const activeRuns = isToday
+    ? getActiveBuses(
+      schedule,
+      currentTimeMinutes,
+      stations[stations.length - 1]?.distanceFromStart ?? 0,
+      true,
+      false,
+    ).length
+    : 0;
+  const upcomingRuns = isToday
+    ? schedule.filter((bus) => timeToMinutes(bus.departureTime) >= currentTimeMinutes).length
+    : schedule.length;
+
+  return {
+    direction: route.direction,
+    routeId,
+    schedule,
+    nextBus,
+    activeRuns,
+    upcomingRuns,
+    isServiceEnded: isToday && schedule.length > 0 && !nextBus,
   };
 };
 

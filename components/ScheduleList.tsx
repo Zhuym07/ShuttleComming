@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarDays, Clock3, ListFilter } from 'lucide-react';
 import { Language, translate } from '../locales';
-import { BusRun } from '../types';
+import { BusRun, Direction } from '../types';
 import { timeToMinutes } from '../utils';
 
 interface ScheduleListProps {
@@ -11,9 +11,10 @@ interface ScheduleListProps {
   isLive: boolean;
   onBusSelect: (bus: BusRun) => void;
   selectedBusId: string | null;
+  direction: Direction;
 }
 
-const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinutes, lang, isLive, onBusSelect, selectedBusId }) => {
+const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinutes, lang, isLive, onBusSelect, selectedBusId, direction }) => {
   const [showAll, setShowAll] = React.useState(!isLive);
   React.useEffect(() => setShowAll(!isLive), [isLive]);
 
@@ -39,7 +40,7 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinute
           <CalendarDays size={18} className="shrink-0 text-brand-600" aria-hidden="true" />
           <div className="min-w-0">
             <h2 className="text-sm font-black uppercase tracking-[0.14em] text-slate-800">{translate(lang, 'timetable')}</h2>
-            <p className="mt-0.5 truncate text-xs text-slate-400">{translate(lang, 'tap_to_preview')}</p>
+            <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{direction === Direction.SOUTH_TO_NORTH ? translate(lang, 'direction_sn') : translate(lang, 'direction_ns')}</p><p className="mt-0.5 truncate text-xs text-slate-400">{translate(lang, 'tap_to_preview')}</p>
           </div>
         </div>
         {isLive && (
