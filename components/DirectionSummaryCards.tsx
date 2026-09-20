@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, BusFront, Clock3, Eye, Radio, Route as RouteIcon } from 'lucide-react';
+import { ArrowRight, BusFront, Eye, Radio, Route as RouteIcon } from 'lucide-react';
 import { Language, translate } from '../locales';
 import { Direction, DirectionSummary } from '../types';
 import { timeToMinutes } from '../utils';
@@ -26,16 +26,7 @@ const DirectionSummaryCards: React.FC<DirectionSummaryCardsProps> = ({
     : translate(lang, 'north_departure');
 
   return (
-    <section aria-labelledby="direction-overview-title">
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-600">GT Shuttle</p>
-          <h2 id="direction-overview-title" className="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-            {translate(lang, 'direction_overview')}
-          </h2>
-        </div>
-        <p className="hidden text-right text-xs font-semibold text-slate-500 sm:block">{translate(lang, 'direction_overview_hint')}</p>
-      </div>
+    <section aria-label={translate(lang, 'direction_switcher')}>
       <div className="grid gap-3 md:grid-cols-2">
         {summaries.map((summary) => {
           const isSelected = summary.direction === selectedDirection;
@@ -51,7 +42,11 @@ const DirectionSummaryCards: React.FC<DirectionSummaryCardsProps> = ({
                   ? `${translate(lang, 'countdown_prefix')} ${countdown} ${translate(lang, 'min_suffix')}`
                   : translate(lang, 'future_date_schedule')
                 : translate(lang, 'service_ended');
-          const icon = summary.activeRuns > 0 ? <Radio size={17} aria-hidden="true" /> : isSelected ? <Eye size={17} aria-hidden="true" /> : <BusFront size={17} aria-hidden="true" />;
+          const icon = summary.activeRuns > 0
+            ? <Radio size={17} aria-hidden="true" />
+            : isSelected
+              ? <Eye size={17} aria-hidden="true" />
+              : <BusFront size={17} aria-hidden="true" />;
 
           return (
             <button
@@ -70,10 +65,13 @@ const DirectionSummaryCards: React.FC<DirectionSummaryCardsProps> = ({
                     </span>
                     <span className="truncate">{getTitle(summary.direction)}</span>
                   </div>
-                  <p className="mt-2 text-xs font-semibold text-slate-500">{isSelected ? translate(lang, 'current_direction') : translate(lang, 'view_route')}</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-500">
+                    {isSelected ? translate(lang, 'current_direction') : translate(lang, 'view_route')}
+                  </p>
                 </div>
                 <ArrowRight className={`shrink-0 transition-transform group-hover:translate-x-1 ${isSelected ? 'text-brand-700' : 'text-slate-300'}`} size={18} aria-hidden="true" />
               </div>
+
               <div className="mt-5 flex items-end justify-between gap-3">
                 <div>
                   <div className={`font-mono text-3xl font-black tabular-nums ${summary.nextBus ? (isSelected ? 'text-brand-800' : 'text-slate-900') : 'text-slate-400'}`}>
