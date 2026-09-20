@@ -13,27 +13,39 @@ export enum DayOfWeek {
   SATURDAY = 6,
 }
 
-// Represents a scheduled bus run
-export interface BusRun {
+export type RouteId = 'south_to_north' | 'north_to_south';
+export type ServiceTag = 'red' | 'blue';
+export type RouteMode = 'day' | 'night';
+
+export interface ScheduleEntry {
   id: string;
-  departureTime: string; // "HH:mm" format
-  days: DayOfWeek[]; // Days this bus operates
+  departureTime: string;
+  days: DayOfWeek[];
+  tag?: ServiceTag;
   notes?: string;
-  color?: string; // UI hint based on the timetable colors
 }
 
-// Represents the static data of a station
+export type BusRun = ScheduleEntry;
+
 export interface Station {
   id: string;
   name: string;
   shortName: string;
-  distanceFromStart: number; // in minutes
+  distanceFromStart: number;
 }
 
-// Represents the real-time calculated state of a bus
+export interface RouteDefinition {
+  id: RouteId;
+  direction: Direction;
+  schedule: ScheduleEntry[];
+  dayStations: Station[];
+  nightStations: Station[];
+  nightModeStartMinutes: number;
+}
+
 export interface LiveBus {
   runId: string;
-  currentMinutesFromStart: number; // How many minutes since departure
+  currentMinutesFromStart: number;
   status: 'SCHEDULED' | 'RUNNING' | 'COMPLETED';
-  label?: string; // e.g. "Departing soon"
+  label?: ServiceTag;
 }

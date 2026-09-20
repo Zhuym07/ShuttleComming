@@ -1,17 +1,26 @@
-import { BusRun, DayOfWeek, Direction, LiveBus, Station } from '../types';
+import { BusRun, DayOfWeek, Direction, LiveBus, RouteMode, Station } from '../types';
+import { getRouteId, ROUTES } from '../config/routes';
 import { timeToMinutes } from '../utils';
 
-export const NIGHT_MODE_START_MINUTES = 19 * 60 + 30;
+export type { RouteMode };
 
-export type RouteMode = 'day' | 'night';
+export interface ShuttleSummary {
+  totalRuns: number;
+  upcomingRuns: number;
+  activeRuns: number;
+  nextDeparture?: string;
+}
 
-export interface ShuttleContext {
+export interface ShuttleViewState {
+  currentTimeMinutes: number;
   isToday: boolean;
   selectedDayOfWeek: DayOfWeek;
   schedule: BusRun[];
+  stations: Station[];
+  routeMode: RouteMode;
   nextBus?: BusRun;
   activeBuses: LiveBus[];
-  routeMode: RouteMode;
+  summary: ShuttleSummary;
 }
 
 export const isSameCalendarDate = (left: Date, right: Date): boolean => (
@@ -48,42 +57,36 @@ export const getActiveBuses = (
   return schedule.flatMap((bus) => {
     const elapsed = currentTimeMinutes - timeToMinutes(bus.departureTime);
     if (elapsed < 0 || elapsed > totalDuration + 2) return [];
-
     return [{
       runId: bus.id,
       currentMinutesFromStart: elapsed,
       status: 'RUNNING' as const,
-      label: bus.color,
+      label: bus.tag,
     }];
   });
 };
 
-export const getRouteModeForDeparture = (departureTime: string): RouteMode => (
-  timeToMinutes(departureTime) >= NIGHT_MODE_START_MINUTES ? 'night' : 'day'
+export const getRouteModeForDeparture = (
+  departureTime: string,
+  nightModeStartMinutes: number,
+): RouteMode => (
+  timeToMinutes(departureTime) >= nightModeStartMinutes ? 'night' : 'day'
 );
 
 export const getRouteMode = ({
   currentTimeMinutes,
   isToday,
-  nextBus,
   previewBus,
+  nightModeStartMinutes,
 }: {
   currentTimeMinutes: number;
   isToday: boolean;
-  nextBus?: BusRun;
   previewBus?: BusRun | null;
+  nightModeStartMinutes: number;
 }): RouteMode => {
-  if (previewBus) {
-    return getRouteModeForDeparture(previewBus.departureTime);
-  }
-
+  if (previewBus) return getRouteModeForDeparture(previewBus.departureTime, nightModeStartMinutes);
   if (!isToday) return 'day';
-
-  if (nextBus) {
-    return getRouteModeForDeparture(nextBus.departureTime);
-  }
-
-  return currentTimeMinutes >= NIGHT_MODE_START_MINUTES ? 'night' : 'day';
+  return currentTimeMinutes >= nightModeStartMinutes ? 'night' : 'day';
 };
 
 export const getEstimatedArrivalMinutes = (bus: BusRun | undefined, station: Station): number | null => (
@@ -92,14 +95,27 @@ export const getEstimatedArrivalMinutes = (bus: BusRun | undefined, station: Sta
 
 export const getCurrentStationIndex = (stations: Station[], elapsedMinutes: number): number => {
   if (stations.length < 2) return 0;
-
   for (let index = 0; index < stations.length - 1; index += 1) {
     if (elapsedMinutes < stations[index + 1].distanceFromStart) return index;
   }
-
   return stations.length - 1;
 };
 
-export const getDirectionLabel = (direction: Direction): string => (
-  direction === Direction.SOUTH_TO_NORTH ? 'South to North' : 'North to South'
-);
+export const getShuttleSummary = (
+  schedule: BusRun[],
+  currentTimeMinutes: number,
+  isToday: boolean,
+  activeRuns: number,
+): ShuttleSummary => {
+  const upcoming = isToday
+    ? schedule.filter((bus) => timeToMinutes(bus.departureTime) >= currentTimeMinutes)
+    : schedule;
+  return {
+    totalRuns: schedule.length,
+    upcomingRuns: upcoming.length,
+    activeRuns,
+    nextDeparture: upcoming[0]?.departureTime,
+  };
+};
+
+export const getRouteForDirection = (direction: Direction) => ROUTES[getRouteId(direction)];

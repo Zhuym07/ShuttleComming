@@ -63,6 +63,12 @@ const translations = {
     status_running: 'On route',
     status_scheduled: 'Scheduled',
     lite_version: 'Lite version',
+    today_runs: 'Today runs',
+    upcoming_departure: 'Next departure',
+    running_now: 'Running now',
+    desktop_summary: 'Service summary',
+    active_bus: 'Active bus',
+    no_active_bus: 'No bus on route',
   },
   zh: {
     app_title: 'GT Shuttle',
@@ -126,6 +132,12 @@ const translations = {
     status_running: '运行中',
     status_scheduled: '待发车',
     lite_version: 'Lite 版本',
+    today_runs: '今日班次',
+    upcoming_departure: '下一班发车',
+    running_now: '正在运行',
+    desktop_summary: '运行摘要',
+    active_bus: '运行中班车',
+    no_active_bus: '当前无运行班车',
   },
 } as const;
 
@@ -142,4 +154,3 @@ export const translate = (
   });
   return text;
 };
-

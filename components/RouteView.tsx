@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Bus, Clock3, Eye, Radio, Route as RouteIcon } from 'lucide-react';
 import { Language, translate } from '../locales';
-import { BusRun, Direction, LiveBus, Station } from '../types';
+import { BusRun, Direction, LiveBus, RouteMode, Station } from '../types';
 import { getEstimatedArrivalMinutes, getCurrentStationIndex } from '../lib/shuttle';
 import { minutesToTime, timeToMinutes } from '../utils';
 
@@ -15,6 +15,7 @@ interface RouteViewProps {
   previewBus: BusRun | null;
   activeBuses: LiveBus[];
   nextBus?: BusRun;
+  routeMode: RouteMode;
 }
 
 const RouteView: React.FC<RouteViewProps> = ({
@@ -27,10 +28,11 @@ const RouteView: React.FC<RouteViewProps> = ({
   previewBus,
   activeBuses,
   nextBus,
+  routeMode,
 }) => {
   const totalDuration = stations[stations.length - 1]?.distanceFromStart ?? 0;
   const displayBus = previewBus ?? nextBus ?? (!isLive ? schedule[0] : undefined);
-  const isNightRoute = stations.length < 3;
+  const isNightRoute = routeMode === 'night';
 
   const activeBusDetails = useMemo(() => activeBuses.map((bus) => {
     const source = schedule.find((candidate) => candidate.id === bus.runId);
