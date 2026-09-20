@@ -1,141 +1,125 @@
-import React, { useState, useEffect } from 'react';
-import { Share, X, Download, PlusSquare } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Download, PlusSquare, Share2, X } from 'lucide-react';
 import { Language, translate } from '../locales';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
 
 interface PWAPromptProps {
   lang: Language;
 }
 
+const DISMISS_KEY = 'gt-shuttle-pwa-prompt-dismissed';
+
 const PWAPrompt: React.FC<PWAPromptProps> = ({ lang }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    // Safety check: wrap in try-catch to prevent white screen if localStorage access is denied (e.g. iOS private mode)
-    const checkPromptStatus = () => {
-      try {
-        // 1. Check if app is already standalone
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-        if (isStandalone) return;
+    let timeoutId: number | undefined;
+    let animationFrameId: number | undefined;
 
-        // 2. Check if user dismissed it
-        const isDismissed = localStorage.getItem('pwa_prompt_dismissed');
-        if (isDismissed) return;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+    if (isStandalone) return undefined;
 
-        // 3. Detect iOS
-        const userAgent = window.navigator.userAgent.toLowerCase();
-        const ios = /iphone|ipad|ipod/.test(userAgent);
-        setIsIOS(ios);
+    let dismissed = false;
+    try {
+      dismissed = window.localStorage.getItem(DISMISS_KEY) === 'true';
+    } catch {
+      dismissed = false;
+    }
+    if (dismissed) return undefined;
 
-        if (ios) {
-          // iOS doesn't support beforeinstallprompt, show after delay
-          // Use a slight delay to ensure the page is fully interactive first
-          setTimeout(() => {
-            setShouldRender(true);
-            // Small delay after render to trigger CSS transition
-            requestAnimationFrame(() => setIsOpen(true));
-          }, 2000);
-        } else {
-          // Android/Desktop logic handled by event listener
-        }
-      } catch (e) {
-        console.warn('PWA prompt check failed:', e);
-      }
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const ios = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(ios);
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+      animationFrameId = window.requestAnimationFrame(() => setIsOpen(true));
     };
 
-    checkPromptStatus();
-
-    // 4. Handle Android/Chrome "beforeinstallprompt"
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShouldRender(true);
-      requestAnimationFrame(() => setIsOpen(true));
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setIsOpen(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    if (ios) {
+      timeoutId = window.setTimeout(() => {
+        animationFrameId = window.requestAnimationFrame(() => setIsOpen(true));
+      }, 2_000);
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      if (timeoutId) window.clearTimeout(timeoutId);
+      if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setIsOpen(false);
-        setTimeout(() => setShouldRender(false), 500);
-      }
-      setDeferredPrompt(null);
-    }
-  };
-
-  const handleDismiss = () => {
+  const dismiss = () => {
     setIsOpen(false);
-    setTimeout(() => setShouldRender(false), 500);
     try {
-      localStorage.setItem('pwa_prompt_dismissed', 'true');
-    } catch (e) {
-      // Ignore storage errors
+      window.localStorage.setItem(DISMISS_KEY, 'true');
+    } catch {
+      // Storage can be unavailable in private browsing; the prompt still closes for this render.
     }
   };
 
-  if (!shouldRender) return null;
+  const install = async () => {
+    if (!deferredPrompt) return;
+
+    try {
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+    } catch (error) {
+      console.warn('PWA install prompt failed:', error);
+    } finally {
+      setDeferredPrompt(null);
+      setIsOpen(false);
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <div 
-      className={`fixed bottom-4 left-4 right-4 z-50 transition-all duration-500 transform ${
-        isOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'
-      }`}
-    >
-      <div className="bg-white rounded-xl shadow-2xl border border-gray-100 p-4 flex flex-col gap-3 relative overflow-hidden">
-        {/* Decorative background element */}
-        <div className="absolute top-0 right-0 w-20 h-20 bg-brand-50 rounded-bl-full -z-0 opacity-50"></div>
-        
-        <div className="flex justify-between items-start z-10">
-          <div className="flex gap-3">
-             <div className="bg-brand-100 p-2 rounded-lg text-brand-600 flex items-center justify-center h-10 w-10">
-                <Download size={20} />
-             </div>
-             <div>
-               <h4 className="font-bold text-gray-900">{translate(lang, 'install_app')}</h4>
-               <p className="text-xs text-gray-500 mt-0.5">{translate(lang, 'install_desc')}</p>
-             </div>
+    <aside className="fixed inset-x-4 bottom-4 z-50 sm:left-auto sm:right-6 sm:max-w-sm" aria-live="polite">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+              <Download size={20} aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-black text-slate-900">{translate(lang, 'install_app')}</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{translate(lang, 'install_desc')}</p>
+            </div>
           </div>
-          <button 
-            onClick={handleDismiss} 
-            className="text-gray-400 hover:text-gray-600 p-1"
-            aria-label="Dismiss"
-          >
-            <X size={18} />
+          <button type="button" onClick={dismiss} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500" aria-label={translate(lang, 'dismiss')}>
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         {isIOS ? (
-           <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 flex flex-col gap-2 mt-1">
-              <div className="flex items-center gap-2">
-                 <span className="bg-gray-200 p-1 rounded"><Share size={14} className="text-blue-500" /></span>
-                 <span>1. {translate(lang, 'install_ios_instr')}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                 <span className="bg-gray-200 p-1 rounded"><PlusSquare size={14} className="text-gray-600" /></span>
-                 <span>2. {translate(lang, 'install_ios_action')}</span>
-              </div>
-           </div>
+          <div className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+            <div className="flex items-center gap-2"><Share2 size={15} className="text-brand-600" aria-hidden="true" /><span>1. {translate(lang, 'install_ios_instr')}</span></div>
+            <div className="flex items-center gap-2"><PlusSquare size={15} className="text-slate-500" aria-hidden="true" /><span>2. {translate(lang, 'install_ios_action')}</span></div>
+          </div>
         ) : (
-          <button 
-            onClick={handleInstallClick}
-            className="w-full bg-brand-600 text-white font-bold py-2.5 rounded-lg text-sm hover:bg-brand-700 transition-colors shadow-sm mt-1"
-          >
+          <button type="button" onClick={install} className="mt-4 min-h-11 w-full rounded-xl bg-brand-600 px-4 text-sm font-bold text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2">
             {translate(lang, 'install_btn')}
           </button>
         )}
       </div>
-    </div>
+    </aside>
   );
 };
 

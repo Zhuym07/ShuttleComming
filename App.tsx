@@ -1,206 +1,143 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronDown, Info, RotateCcw } from 'lucide-react';
 import Header from './components/Header';
 import RouteView from './components/RouteView';
 import ScheduleList from './components/ScheduleList';
 import DateSelector from './components/DateSelector';
 import PWAPrompt from './components/PWAPrompt';
-import { Direction, BusRun, DayOfWeek } from './types';
-import { SCHEDULE_N_S, SCHEDULE_S_N } from './config/schedules';
-import { STATIONS_N_S, STATIONS_S_N, STATIONS_N_S_NIGHT, STATIONS_S_N_NIGHT } from './config/stations';
-import { getCurrentTimeMinutes, getBusesForToday, timeToMinutes } from './utils';
-import { Info, ChevronDown, RotateCcw } from 'lucide-react';
 import { Language, translate } from './locales';
+import { BusRun, Direction } from './types';
+import { useShuttleState } from './hooks/useShuttleState';
+import { getDateLabel } from './utils';
+
+const liteHref = `${import.meta.env.BASE_URL}lite.html`;
 
 const App: React.FC = () => {
   const [direction, setDirection] = useState<Direction>(Direction.SOUTH_TO_NORTH);
-  const [currentTimeMinutes, setCurrentTimeMinutes] = useState(getCurrentTimeMinutes());
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [lang, setLang] = useState<Language>('zh'); // Default to Chinese based on request
-  
-  // State for previewing a specific bus run (overrides live view)
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [lang, setLang] = useState<Language>('zh');
   const [previewBus, setPreviewBus] = useState<BusRun | null>(null);
 
-  // Cutoff time for Gate 9 closure (19:30)
-  const NIGHT_MODE_START_MINUTES = 1170; // 19 * 60 + 30
+  const shuttle = useShuttleState({ direction, selectedDate, previewBus });
 
-  // Check if the selected date is today
-  const isToday = useMemo(() => {
-    const today = new Date();
-    return selectedDate.getDate() === today.getDate() && 
-           selectedDate.getMonth() === today.getMonth() && 
-           selectedDate.getFullYear() === today.getFullYear();
-  }, [selectedDate]);
-
-  // Update time every 30 seconds to refresh UI if viewing today
-  useEffect(() => {
-    // Initial set
-    setCurrentTimeMinutes(getCurrentTimeMinutes());
-
-    const interval = setInterval(() => {
-      if (isToday) {
-        setCurrentTimeMinutes(getCurrentTimeMinutes());
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [isToday]);
-
-  // Reset preview when direction or date changes
   useEffect(() => {
     setPreviewBus(null);
   }, [direction, selectedDate]);
 
-  // Determine the DayOfWeek for the selected date
-  const selectedDayOfWeek: DayOfWeek = useMemo(() => {
-    return selectedDate.getDay() as DayOfWeek;
-  }, [selectedDate]);
+  const formattedDate = useMemo(
+    () => getDateLabel(selectedDate, lang),
+    [lang, selectedDate],
+  );
 
-  // Filter schedule based on selected day
-  const todaysSchedule: BusRun[] = useMemo(() => {
-    const rawSchedule = direction === Direction.SOUTH_TO_NORTH ? SCHEDULE_S_N : SCHEDULE_N_S;
-    return getBusesForToday(rawSchedule, selectedDayOfWeek);
-  }, [direction, selectedDayOfWeek]);
-
-  // Determine which station config to use (Day vs Night)
-  const currentStations = useMemo(() => {
-    let isNightMode = false;
-
-    if (previewBus) {
-        // If previewing, stick to that bus's schedule
-        if (timeToMinutes(previewBus.departureTime) >= NIGHT_MODE_START_MINUTES) {
-            isNightMode = true;
-        }
-    } else if (isToday) {
-      // Find next bus logic
-      const nextBus = todaysSchedule.find(bus => timeToMinutes(bus.departureTime) > currentTimeMinutes);
-      if (nextBus) {
-        if (timeToMinutes(nextBus.departureTime) >= NIGHT_MODE_START_MINUTES) {
-          isNightMode = true;
-        }
-      } else {
-        // No next bus, check current time
-        if (currentTimeMinutes >= NIGHT_MODE_START_MINUTES) {
-          isNightMode = true;
-        }
-      }
-    } else {
-      // Future date defaults
-      isNightMode = false; 
-    }
-
-    if (direction === Direction.SOUTH_TO_NORTH) {
-      return isNightMode ? STATIONS_S_N_NIGHT : STATIONS_S_N;
-    } else {
-      return isNightMode ? STATIONS_N_S_NIGHT : STATIONS_N_S;
-    }
-  }, [direction, isToday, todaysSchedule, currentTimeMinutes, previewBus]);
+  const effectiveText = lang === 'en'
+    ? 'Effective from May 12, 2026 · Teaching Weeks 1–13'
+    : '生效日期：2026年5月12日 · 教学周第1–13周';
 
   const toggleDirection = () => {
-    setDirection(prev => prev === Direction.SOUTH_TO_NORTH ? Direction.NORTH_TO_SOUTH : Direction.SOUTH_TO_NORTH);
+    setDirection((current) => (
+      current === Direction.SOUTH_TO_NORTH
+        ? Direction.NORTH_TO_SOUTH
+        : Direction.SOUTH_TO_NORTH
+    ));
   };
 
   const handleBusSelect = (bus: BusRun) => {
     setPreviewBus(bus);
-    // Auto-scroll to top smoothly
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const formattedDate = selectedDate.toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-CN', { month: 'short', day: 'numeric', weekday: 'short' });
-  const effectiveText = lang === 'en'
-    ? 'Effective: May 12, 2026 (Teaching Week 1-13)'
-    : '生效日期：2026年5月12日（教学周第1-13周）';
-
   return (
-    <div className="min-h-screen pb-12 flex flex-col font-sans bg-gray-50">
+    <div className="min-h-screen bg-slate-50 pb-10 text-slate-900">
       <Header lang={lang} setLang={setLang} />
-
       <DateSelector selectedDate={selectedDate} onSelectDate={setSelectedDate} lang={lang} />
 
-      <main className="flex-1 max-w-md mx-auto w-full p-4 space-y-4 relative">
-        
-        {/* Direction Switcher */}
-        <button 
-          onClick={toggleDirection}
-          className="w-full bg-white rounded-xl p-1 shadow-sm border border-gray-200 flex relative overflow-hidden group"
-        >
-           <div className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-brand-500 rounded-lg shadow-sm transition-all duration-300 ease-out ${direction === Direction.SOUTH_TO_NORTH ? 'left-1' : 'left-[calc(50%+4px)]'}`}></div>
-           
-           <div className={`flex-1 relative z-10 py-3 text-sm font-bold text-center transition-colors duration-300 ${direction === Direction.SOUTH_TO_NORTH ? 'text-white' : 'text-gray-500'}`}>
-             {translate(lang, 'direction_sn')}
-           </div>
-           <div className={`flex-1 relative z-10 py-3 text-sm font-bold text-center transition-colors duration-300 ${direction === Direction.NORTH_TO_SOUTH ? 'text-white' : 'text-gray-500'}`}>
-             {translate(lang, 'direction_ns')}
-           </div>
-        </button>
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 py-4 sm:px-6">
+        <section className="rounded-2xl border border-slate-200 bg-white p-1 shadow-sm" aria-label={translate(lang, 'direction_switcher')}>
+          <button
+            type="button"
+            onClick={toggleDirection}
+            className="relative flex min-h-12 w-full overflow-hidden rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            aria-label={translate(lang, 'toggle_direction')}
+          >
+            <span
+              className={`absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-lg bg-brand-600 shadow-sm transition-transform duration-300 ${
+                direction === Direction.NORTH_TO_SOUTH ? 'translate-x-full' : 'translate-x-0'
+              }`}
+            />
+            <span className={`relative z-10 flex flex-1 items-center justify-center px-3 text-sm font-bold transition-colors ${direction === Direction.SOUTH_TO_NORTH ? 'text-white' : 'text-slate-500'}`}>
+              {translate(lang, 'direction_sn')}
+            </span>
+            <span className={`relative z-10 flex flex-1 items-center justify-center px-3 text-sm font-bold transition-colors ${direction === Direction.NORTH_TO_SOUTH ? 'text-white' : 'text-slate-500'}`}>
+              {translate(lang, 'direction_ns')}
+            </span>
+          </button>
+        </section>
 
-        {/* Info Banner */}
-        <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-3 flex items-start gap-3">
-          <Info className="text-yellow-600 flex-shrink-0 mt-0.5" size={16} />
-          <div className="text-xs text-yellow-800">
-            <p className="font-semibold mb-1">{translate(lang, 'schedule_info_title')}</p>
-            <p>{translate(lang, 'schedule_info_text')}</p>
-            <p className="mt-1 font-semibold">{effectiveText}</p>
+        <section className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-sm" aria-live="polite">
+          <Info className="mt-0.5 shrink-0 text-amber-600" size={18} aria-hidden="true" />
+          <div className="min-w-0 text-sm leading-6">
+            <p className="font-bold">{translate(lang, 'schedule_info_title')}</p>
+            <p className="mt-1 text-amber-900/80">{translate(lang, 'schedule_info_text')}</p>
+            <p className="mt-2 font-semibold text-amber-900">{effectiveText}</p>
           </div>
-        </div>
+        </section>
 
-        {/* Preview Mode Alert / Resume Button */}
         {previewBus && (
-            <div className="flex justify-center sticky top-[130px] z-30 pointer-events-none">
-                <button 
-                    onClick={() => setPreviewBus(null)}
-                    className="pointer-events-auto shadow-lg bg-amber-600 text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-bold hover:bg-amber-700 transition-colors animate-in fade-in slide-in-from-bottom-2"
-                >
-                    <RotateCcw size={16} />
-                    {translate(lang, 'resume_live')}
-                </button>
-            </div>
+          <div className="sticky top-[8.5rem] z-30 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setPreviewBus(null)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-amber-600 px-5 text-sm font-bold text-white shadow-lg transition hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            >
+              <RotateCcw size={16} aria-hidden="true" />
+              {translate(lang, 'resume_live')}
+            </button>
+          </div>
         )}
 
-        {/* Main Timeline View */}
-        <RouteView 
+        <RouteView
           direction={direction}
-          schedule={todaysSchedule}
-          stations={currentStations}
-          currentTimeMinutes={currentTimeMinutes}
+          schedule={shuttle.schedule}
+          stations={shuttle.stations}
+          currentTimeMinutes={shuttle.currentTimeMinutes}
           lang={lang}
-          isLive={isToday}
+          isLive={shuttle.isToday}
           previewBus={previewBus}
+          activeBuses={shuttle.activeBuses}
+          nextBus={shuttle.nextBus}
         />
 
-        {/* Upcoming Schedule List */}
-        <ScheduleList 
-          schedule={todaysSchedule}
-          currentTimeMinutes={currentTimeMinutes}
+        <ScheduleList
+          schedule={shuttle.schedule}
+          currentTimeMinutes={shuttle.currentTimeMinutes}
           lang={lang}
-          isLive={isToday}
+          isLive={shuttle.isToday}
           onBusSelect={handleBusSelect}
-          selectedBusId={previewBus?.id || null}
+          selectedBusId={previewBus?.id ?? null}
         />
 
-        {/* Footer / Stats */}
-        <div className="text-center text-gray-400 text-xs py-4 flex flex-col gap-1 items-center">
-          <p>{translate(lang, 'displaying_runs', { count: todaysSchedule.length, date: formattedDate })}</p>
+        <footer className="flex flex-col items-center gap-2 px-2 py-4 text-center text-xs text-slate-400">
+          <p>{translate(lang, 'displaying_runs', { count: shuttle.schedule.length, date: formattedDate })}</p>
           <p>
-            © Ckar | <a href="/lite.html" className="underline hover:text-brand-600">Lite Version (Legacy)</a>
+            © Ckar · <a href={liteHref} className="font-medium text-brand-600 underline-offset-2 hover:underline">{translate(lang, 'lite_version')}</a>
           </p>
-
-          <details className="w-full max-w-[300px] mt-4 group">
-            <summary className="cursor-pointer list-none flex items-center justify-center gap-1 text-[10px] text-gray-300 hover:text-gray-500 transition-colors">
+          <details className="w-full max-w-md rounded-xl border border-slate-200 bg-white text-left shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-xs font-semibold text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
               <span>{translate(lang, 'disclaimer_title')}</span>
-              <ChevronDown size={10} className="transform transition-transform group-open:rotate-180" />
+              <ChevronDown size={14} aria-hidden="true" />
             </summary>
-            <div className="mt-2 text-[10px] leading-relaxed text-gray-400 text-justify bg-gray-100 p-3 rounded-lg border border-gray-200">
-               {translate(lang, 'disclaimer_text')}
-            </div>
+            <p className="border-t border-slate-100 px-4 py-3 text-[11px] leading-5 text-slate-500">
+              {translate(lang, 'disclaimer_text')}
+            </p>
           </details>
-        </div>
-
+        </footer>
       </main>
-      
-      {/* PWA Installation Prompt */}
+
       <PWAPrompt lang={lang} />
     </div>
   );
 };
 
 export default App;
+
+

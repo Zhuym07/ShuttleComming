@@ -1,16 +1,16 @@
-import { BusRun } from '../types';
+import { BusRun, DayOfWeek } from '../types';
 
 // Helper to define days
-const DAILY = [0, 1, 2, 3, 4, 5, 6];
-const WED_THU_FRI = [3, 4, 5];
-const TUE_WED_THU_FRI = [2, 3, 4, 5];
-const FRI_ONLY = [5];
-const WED_ONLY = [3];
-const THU_ONLY = [4];
-const THU_FRI = [4, 5];
-const TUE_WED_THU = [2, 3, 4];
-const TUE_WED_FRI = [2, 3, 5];
-const WED_FRI = [3, 5];
+const DAILY: DayOfWeek[] = [0, 1, 2, 3, 4, 5, 6];
+const WED_THU_FRI: DayOfWeek[] = [3, 4, 5];
+const TUE_WED_THU_FRI: DayOfWeek[] = [2, 3, 4, 5];
+const FRI_ONLY: DayOfWeek[] = [5];
+const WED_ONLY: DayOfWeek[] = [3];
+const THU_ONLY: DayOfWeek[] = [4];
+const THU_FRI: DayOfWeek[] = [4, 5];
+const TUE_WED_THU: DayOfWeek[] = [2, 3, 4];
+const TUE_WED_FRI: DayOfWeek[] = [2, 3, 5];
+const WED_FRI: DayOfWeek[] = [3, 5];
 
 // ----- Schedule Data -----
 // Teaching Week 1-13, effective May 12, 2026
@@ -90,3 +90,4 @@ export const SCHEDULE_N_S: BusRun[] = [
   { id: 'ns_2040', departureTime: '20:40', days: DAILY },
   { id: 'ns_2200', departureTime: '22:00', days: DAILY },
 ];
+

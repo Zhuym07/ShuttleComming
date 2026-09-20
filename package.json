@@ -1,10 +1,11 @@
 {
   "name": "campus-shuttle-live",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && cp sw.js dist/sw.js",
+    "build": "tsc && vite build && node scripts/copy-sw.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

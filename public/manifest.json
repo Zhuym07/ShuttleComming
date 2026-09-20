@@ -1,26 +1,24 @@
 {
   "name": "GT Shuttle",
   "short_name": "GT Shuttle",
-  "start_url": "/",
+  "description": "Campus shuttle schedule and estimated arrival times.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f3f4f6",
-  "theme_color": "#0284c7",
+  "background_color": "#f8fafc",
+  "theme_color": "#0369a1",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://s2.loli.net/2025/12/25/vJNMC1xYzG3risE.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://s2.loli.net/2025/12/25/KAktTGrdNchXgZ1.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

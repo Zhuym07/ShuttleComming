@@ -1,100 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
-    <!-- Legacy Browser Detection & Redirect -->
-    <script>
-      (function() {
-        try {
-          // Check for features required by React 18+ and Vite
-          // If Promise, fetch, or basic ES6 syntax isn't available, redirect.
-          if (!window.Promise || !window.fetch || !Array.prototype.includes) {
-            throw new Error("Legacy browser detected");
-          }
-          // Optional: Check specifically for very old User Agents if feature detection passes but performance is awful (e.g., 3DS)
-          var ua = navigator.userAgent.toLowerCase();
-          if (ua.indexOf('nintendo 3ds') > -1 || ua.indexOf('msie') > -1) {
-             throw new Error("Low power device detected");
-          }
-        } catch (e) {
-          // Prevent redirect loop if we are already there (though this script is in index.html, not lite.html)
-          window.location.href = '/lite.html';
-        }
-      })();
-    </script>
-
-    <title>GT Shuttle</title>
-    
-    <!-- PWA & Mobile -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0284c7" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0369a1" />
+    <meta name="description" content="GT Shuttle campus shuttle schedule and estimated arrival times." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="GT Shuttle" />
-    
-    <!-- Custom Icons (External with SVG Fallback) -->
-    <link rel="icon" href="https://s2.loli.net/2025/12/25/2IJm8vG4nuFfirl.png" />
-    <link rel="apple-touch-icon" href="https://s2.loli.net/2025/12/25/KgFOXqwZ1p9BTe7.png" />
-    
-    <!-- Fallback / Placeholder Icon -->
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-
-    <!-- Open Graph / Social -->
-    <meta property="og:title" content="GT Shuttle" />
-    <meta property="og:description" content="Real-time campus shuttle tracker with estimated arrival times based on schedule." />
-    <meta property="og:image" content="https://s2.loli.net/2025/12/25/vJNMC1xYzG3risE.png" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="GT Shuttle" />
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        background-color: #f3f4f6;
-        -webkit-tap-highlight-color: transparent;
-      }
-      /* Hide scrollbar for clean UI */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
-</head>
+    <title>GT Shuttle</title>
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" href="./favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>
