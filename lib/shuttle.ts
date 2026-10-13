@@ -48,7 +48,7 @@ export const getNextBus = (
 export const getActiveBuses = (
   schedule: BusRun[],
   currentTimeMinutes: number,
-  totalDuration: number,
+  totalDuration: number | ((bus: BusRun) => number),
   isLive: boolean,
   isPreviewing: boolean,
 ): LiveBus[] => {
@@ -56,7 +56,7 @@ export const getActiveBuses = (
 
   return schedule.flatMap((bus) => {
     const elapsed = currentTimeMinutes - timeToMinutes(bus.departureTime);
-    if (elapsed < 0 || elapsed > totalDuration + 2) return [];
+    if (elapsed < 0 || elapsed > (typeof totalDuration === 'function' ? totalDuration(bus) : totalDuration) + 2) return [];
     return [{
       runId: bus.id,
       currentMinutesFromStart: elapsed,
@@ -139,7 +139,7 @@ export const getDirectionSummary = ({
     ? getActiveBuses(
       schedule,
       currentTimeMinutes,
-      stations[stations.length - 1]?.distanceFromStart ?? 0,
+      bus => { const stops = getRouteModeForDeparture(bus.departureTime, route.nightModeStartMinutes) === 'night' ? route.nightStations : route.dayStations; return stops[stops.length - 1].distanceFromStart; },
       true,
       false,
     ).length
@@ -155,7 +155,7 @@ export const getDirectionSummary = ({
     nextBus,
     activeRuns,
     upcomingRuns,
-    isServiceEnded: isToday && schedule.length > 0 && !nextBus,
+    isServiceEnded: isToday && schedule.length > 0 && !nextBus && activeRuns === 0,
   };
 };
 

@@ -4,6 +4,7 @@ import { BusRun, DayOfWeek, Direction, RouteMode, Station } from '../types';
 import { getCurrentTimeMinutes } from '../utils';
 import {
   getActiveBuses,
+  getRouteModeForDeparture,
   getNextBus,
   getRouteMode,
   getScheduleForDay,
@@ -51,11 +52,11 @@ export const useShuttleState = ({ direction, selectedDate, previewBus, currentTi
     () => getActiveBuses(
       schedule,
       currentTimeMinutes,
-      stations[stations.length - 1]?.distanceFromStart ?? 0,
+      bus => { const stops = getRouteModeForDeparture(bus.departureTime, route.nightModeStartMinutes) === 'night' ? route.nightStations : route.dayStations; return stops[stops.length - 1].distanceFromStart; },
       isToday,
       Boolean(previewBus),
     ),
-    [currentTimeMinutes, isToday, previewBus, schedule, stations],
+    [currentTimeMinutes, isToday, previewBus, schedule, route],
   );
   const summary = useMemo(
     () => getShuttleSummary(schedule, currentTimeMinutes, isToday, activeBuses.length),
