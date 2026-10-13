@@ -27,7 +27,7 @@ const DirectionSummaryCards: React.FC<DirectionSummaryCardsProps> = ({
 
   return (
     <section aria-label={translate(lang, 'direction_switcher')}>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {summaries.map((summary) => {
           const isSelected = summary.direction === selectedDirection;
           const countdown = isToday && summary.nextBus
@@ -53,14 +53,14 @@ const DirectionSummaryCards: React.FC<DirectionSummaryCardsProps> = ({
               key={summary.routeId}
               type="button"
               onClick={() => onSelectDirection(summary.direction)}
-              className={`group min-h-[156px] rounded-3xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${isSelected ? 'border-brand-500 bg-brand-50 shadow-[0_12px_30px_rgba(14,116,144,0.12)]' : 'border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/40'}`}
+              className={`group min-h-[156px] min-w-0 rounded-3xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${isSelected ? 'border-brand-500 bg-brand-50 shadow-[0_12px_30px_rgba(14,116,144,0.12)]' : 'border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/40'}`}
               aria-pressed={isSelected}
               aria-label={`${getTitle(summary.direction)}. ${translate(lang, 'view_route')}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl ${isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                    <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                       <RouteIcon size={17} aria-hidden="true" />
                     </span>
                     <span className="truncate">{getTitle(summary.direction)}</span>

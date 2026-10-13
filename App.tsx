@@ -10,6 +10,7 @@ import { Language, translate } from './locales';
 import { BusRun, Direction } from './types';
 import { useShuttleState } from './hooks/useShuttleState';
 import { useShuttleOverview } from './hooks/useShuttleOverview';
+import { useInstallGuide } from './hooks/useInstallGuide';
 import { getDateLabel } from './utils';
 
 const liteHref = `${import.meta.env.BASE_URL}lite.html`;
@@ -19,6 +20,7 @@ const App: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [lang, setLang] = useState<Language>('zh');
   const [previewBus, setPreviewBus] = useState<BusRun | null>(null);
+  const installGuide = useInstallGuide();
   const overview = useShuttleOverview({ selectedDate });
   const shuttle = useShuttleState({ direction, selectedDate, previewBus, currentTimeMinutes: overview.currentTimeMinutes });
 
@@ -112,6 +114,7 @@ const App: React.FC = () => {
                   {translate(lang, 'lite_version')}
                 </a>
               </p>
+              {!installGuide.standalone && <button type="button" onClick={installGuide.openGuide} className="min-h-11 rounded-xl px-3 font-semibold text-brand-700 underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-brand-500">{translate(lang, 'install_btn')}</button>}
               <details className="w-full rounded-2xl border border-slate-200 bg-white text-left shadow-sm">
                 <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-xs font-semibold text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                   <span>{translate(lang, 'disclaimer_title')}</span>
@@ -126,7 +129,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <PWAPrompt lang={lang} />
+      <PWAPrompt lang={lang} guide={installGuide} />
     </div>
   );
 };
