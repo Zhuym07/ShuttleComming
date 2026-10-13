@@ -1,7 +1,7 @@
-const CACHE_NAME = 'gt-shuttle-cache-v8';
+const CACHE_NAME = 'gt-shuttle-cache-v9';
 
 const scopedUrl = (path) => new URL(path.replace(/^\//, ''), self.registration.scope).toString();
-const CRITICAL_ASSETS = ['.', 'index.html', 'manifest.json', 'icon.svg', 'lite.html'].map(scopedUrl);
+const CRITICAL_ASSETS = ['.', 'index.html', 'manifest.json', 'icon.svg', 'favicon.svg', 'favicon.ico?v=2', 'favicon.png?v=2', 'apple-touch-icon.png?v=2', 'icon-192.png?v=2', 'icon-512.png?v=2', 'lite.html'].map(scopedUrl);
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

@@ -55,6 +55,8 @@ npm run preview
 - `config/schedules.ts`：双向班次和运行日期
 - `config/stations.ts`：日间/夜间站点与预计行驶时间
 - `locales.ts`：中英文文案
+- `public/icon.svg`：主屏幕图标源文件；导出为 `icon-192.png`、`icon-512.png` 和 180px 的 `apple-touch-icon.png`，保持完整、不透明的背景和车身四周留白
+- `public/favicon.svg`：小尺寸网页图标源文件；导出为 `favicon.png`（32px）和 `favicon.ico`（16/32/48px）
 - `hooks/useShuttleState.ts`：页面状态与实时派生数据
 - `lib/shuttle.ts`：班次、路线和时间计算逻辑
 

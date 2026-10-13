@@ -1,4 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#0284c7"/>
-  <path fill="white" d="M166 160h180v50h-65v190h-50v-190h-65v-50z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">GT Shuttle — campus shuttle</title>
+  <!-- Opaque background; the vehicle fits inside the maskable icon safe area. -->
+  <rect width="512" height="512" fill="#F5F0E2"/>
+  <g fill="#132044">
+    <rect x="164" y="346" width="40" height="54" rx="12"/>
+    <rect x="308" y="346" width="40" height="54" rx="12"/>
+    <path d="M140 174Q140 108 206 108H306Q372 108 372 174V326Q372 370 328 370H184Q140 370 140 326Z"/>
+  </g>
+  <rect x="167" y="158" width="178" height="96" rx="14" fill="#FFFDF7"/>
+  <!-- A bent route ending in an arrow is the shuttle's identifying mark. -->
+  <path d="M192 226H235Q250 226 250 211V192H318M298 172L318 192L298 212" fill="none" stroke="#AD9D65" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#FFFDF7">
+    <circle cx="188" cy="306" r="20"/>
+    <circle cx="324" cy="306" r="20"/>
+  </g>
 </svg>

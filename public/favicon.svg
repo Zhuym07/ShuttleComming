@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">GT Shuttle</title>
+  <!-- Larger silhouette and a straight arrow for small browser tab icons. -->
+  <rect width="512" height="512" rx="96" fill="#F5F0E2"/>
+  <g fill="#132044">
+    <rect x="140" y="362" width="48" height="62" rx="12"/>
+    <rect x="324" y="362" width="48" height="62" rx="12"/>
+    <path d="M112 164Q112 88 188 88H324Q400 88 400 164V332Q400 386 346 386H166Q112 386 112 332Z"/>
+  </g>
+  <rect x="150" y="148" width="212" height="116" rx="16" fill="#FFFDF7"/>
+  <path d="M184 206H322M294 178L322 206L294 234" fill="none" stroke="#AD9D65" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#FFFDF7">
+    <circle cx="172" cy="326" r="24"/>
+    <circle cx="340" cy="326" r="24"/>
+  </g>
+</svg>
