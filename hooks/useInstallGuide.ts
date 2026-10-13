@@ -10,6 +10,8 @@ export type InstallGuideMode = 'wechat' | 'native' | 'ios-safari' | 'ios-chrome'
 const VISIT_KEY = 'gt-shuttle-install-visit';
 const WECHAT_COUNT_KEY = 'gt-shuttle-wechat-visits';
 const INSTALLED_KEY = 'gt-shuttle-pwa-installed';
+const REMINDER_PAUSE_KEY = 'gt-shuttle-install-reminder-paused-until';
+const REMINDER_PAUSE_MS = 3 * 24 * 60 * 60 * 1_000;
 
 const getEnvironment = () => {
   const ua = navigator.userAgent;
@@ -62,6 +64,10 @@ const recordInstalled = () => {
   try { localStorage.setItem(INSTALLED_KEY, 'true'); } catch { /* Standalone detection remains available. */ }
 };
 
+const areRemindersPaused = () => {
+  try { return Number(localStorage.getItem(REMINDER_PAUSE_KEY)) > Date.now(); } catch { return false; }
+};
+
 export const useInstallGuide = () => {
   const [environment] = useState(getEnvironment);
   const [visit] = useState(() => getVisit(environment.isWechat));
@@ -79,6 +85,11 @@ export const useInstallGuide = () => {
     saveVisit(visit);
     setIsOpen(false);
   }, [visit]);
+
+  const pauseReminders = useCallback(() => {
+    try { localStorage.setItem(REMINDER_PAUSE_KEY, String(Date.now() + REMINDER_PAUSE_MS)); } catch { /* Dismiss this visit when storage is unavailable. */ }
+    dismissGuide();
+  }, [dismissGuide]);
 
   const openGuide = useCallback(() => {
     if (standaloneRef.current) return;
@@ -102,7 +113,7 @@ export const useInstallGuide = () => {
     };
 
     const showIfEligible = () => {
-      if (!ready || visit.shown || installedRef.current || standaloneRef.current || document.visibilityState !== 'visible') return;
+      if (!ready || visit.shown || installedRef.current || standaloneRef.current || areRemindersPaused() || document.visibilityState !== 'visible') return;
       const eligible = environment.isWechat ? visit.wechatEligible : environment.isMobile || Boolean(promptRef.current);
       if (eligible) openGuide();
     };
@@ -171,7 +182,7 @@ export const useInstallGuide = () => {
     : environment.isIOS ? `ios-${environment.iosBrowser}`
     : environment.isMobile ? 'android' : 'desktop';
 
-  return { isOpen, mode, isIOS: environment.isIOS, standalone, isInstalling, installError, openGuide, dismissGuide, install };
+  return { isOpen, mode, isIOS: environment.isIOS, standalone, isInstalling, installError, openGuide, dismissGuide, pauseReminders, install };
 };
 
 export type InstallGuideState = ReturnType<typeof useInstallGuide>;
