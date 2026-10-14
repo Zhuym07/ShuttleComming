@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && node scripts/copy-sw.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:animation": "node scripts/check-animation.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.300.0",

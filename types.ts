@@ -43,11 +43,18 @@ export interface RouteDefinition {
   nightModeStartMinutes: number;
 }
 
+export interface UpcomingDeparture {
+  departureTime: string;
+  runs: BusRun[];
+  origin: Station;
+}
+
 export interface DirectionSummary {
   direction: Direction;
   routeId: RouteId;
   schedule: BusRun[];
   nextBus?: BusRun;
+  upcomingDepartures: UpcomingDeparture[];
   activeRuns: number;
   upcomingRuns: number;
   isServiceEnded: boolean;

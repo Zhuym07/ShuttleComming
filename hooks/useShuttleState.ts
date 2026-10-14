@@ -1,77 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { getRouteForDirection } from '../lib/shuttle';
-import { BusRun, DayOfWeek, Direction, RouteMode, Station } from '../types';
-import { getCurrentTimeMinutes } from '../utils';
-import {
-  getActiveBuses,
-  getRouteModeForDeparture,
-  getNextBus,
-  getRouteMode,
-  getScheduleForDay,
-  getShuttleSummary,
-  isSameCalendarDate,
-  ShuttleViewState,
-} from '../lib/shuttle';
+import { useMemo } from 'react';
+import { BusRun, DayOfWeek, Direction } from '../types';
+import { getActiveBuses, getNextBus, getRouteForDirection, getRouteMode, getRouteModeForDeparture, getScheduleForDay, getShuttleSummary, ShuttleViewState } from '../lib/shuttle';
 
-interface UseShuttleStateOptions {
-  direction: Direction;
-  selectedDate: Date;
-  previewBus: BusRun | null;
-  currentTimeMinutes?: number;
-}
-
-export const useShuttleState = ({ direction, selectedDate, previewBus, currentTimeMinutes: sharedCurrentTimeMinutes }: UseShuttleStateOptions): ShuttleViewState => {
-  const [localCurrentTimeMinutes, setLocalCurrentTimeMinutes] = useState(getCurrentTimeMinutes());
-  const currentTimeMinutes = sharedCurrentTimeMinutes ?? localCurrentTimeMinutes;
-  const isToday = isSameCalendarDate(selectedDate, new Date());
-  const selectedDayOfWeek = selectedDate.getDay() as DayOfWeek;
+interface Options { direction: Direction; selectedDate: Date; previewBus: BusRun | null; currentTimeMinutes: number; isToday: boolean; }
+export function useShuttleState({ direction, selectedDate, previewBus, currentTimeMinutes, isToday }: Options): ShuttleViewState {
   const route = getRouteForDirection(direction);
-
-  useEffect(() => {
-    if (sharedCurrentTimeMinutes !== undefined || !isToday) return undefined;
-    const interval = window.setInterval(() => setLocalCurrentTimeMinutes(getCurrentTimeMinutes()), 30_000);
-    return () => window.clearInterval(interval);
-  }, [isToday, sharedCurrentTimeMinutes]);
-
-  const schedule = useMemo(() => getScheduleForDay(route.schedule, selectedDayOfWeek), [route.schedule, selectedDayOfWeek]);
-  const nextBus = useMemo(
-    () => getNextBus(schedule, currentTimeMinutes, isToday && !previewBus),
-    [currentTimeMinutes, isToday, previewBus, schedule],
-  );
-  const routeMode: RouteMode = useMemo(
-    () => getRouteMode({
-      currentTimeMinutes,
-      isToday,
-      previewBus,
-      nightModeStartMinutes: route.nightModeStartMinutes,
-    }),
-    [currentTimeMinutes, isToday, previewBus, route.nightModeStartMinutes],
-  );
-  const stations: Station[] = routeMode === 'night' ? route.nightStations : route.dayStations;
-  const activeBuses = useMemo(
-    () => getActiveBuses(
-      schedule,
-      currentTimeMinutes,
-      bus => { const stops = getRouteModeForDeparture(bus.departureTime, route.nightModeStartMinutes) === 'night' ? route.nightStations : route.dayStations; return stops[stops.length - 1].distanceFromStart; },
-      isToday,
-      Boolean(previewBus),
-    ),
-    [currentTimeMinutes, isToday, previewBus, schedule, route],
-  );
-  const summary = useMemo(
-    () => getShuttleSummary(schedule, currentTimeMinutes, isToday, activeBuses.length),
-    [activeBuses.length, currentTimeMinutes, isToday, schedule],
-  );
-
-  return {
-    currentTimeMinutes,
-    isToday,
-    selectedDayOfWeek,
-    schedule,
-    nextBus,
-    activeBuses,
-    routeMode,
-    stations,
-    summary,
-  };
-};
+  const selectedDayOfWeek = selectedDate.getDay() as DayOfWeek;
+  const schedule = useMemo(() => getScheduleForDay(route.schedule, selectedDayOfWeek), [route, selectedDayOfWeek]);
+  const nextBus = getNextBus(schedule, currentTimeMinutes, isToday);
+  const routeMode = getRouteMode({ currentTimeMinutes, isToday, previewBus, nightModeStartMinutes: route.nightModeStartMinutes });
+  const stations = routeMode === 'night' ? route.nightStations : route.dayStations;
+  const activeBuses = getActiveBuses(schedule, currentTimeMinutes, bus => {
+    const stops = getRouteModeForDeparture(bus.departureTime, route.nightModeStartMinutes) === 'night' ? route.nightStations : route.dayStations;
+    return stops[stops.length - 1].distanceFromStart;
+  }, isToday, Boolean(previewBus));
+  return { currentTimeMinutes, isToday, selectedDayOfWeek, schedule, nextBus, routeMode, stations, activeBuses, summary: getShuttleSummary(schedule, currentTimeMinutes, isToday, activeBuses.length) };
+}

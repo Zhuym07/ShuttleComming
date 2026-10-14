@@ -19,7 +19,7 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinute
   React.useEffect(() => setShowAll(!isLive), [isLive]);
 
   const upcomingBuses = React.useMemo(
-    () => isLive ? schedule.filter((bus) => timeToMinutes(bus.departureTime) >= currentTimeMinutes) : schedule,
+    () => isLive ? schedule.filter((bus) => timeToMinutes(bus.departureTime) > currentTimeMinutes) : schedule,
     [currentTimeMinutes, isLive, schedule],
   );
   const displayedBuses = showAll ? schedule : upcomingBuses;
@@ -35,12 +35,12 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinute
 
   return (
     <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft" aria-label={translate(lang, 'timetable')}>
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 lg:px-6">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3 lg:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <CalendarDays size={18} className="shrink-0 text-brand-600" aria-hidden="true" />
           <div className="min-w-0">
             <h2 className="text-sm font-black uppercase tracking-[0.14em] text-slate-800">{translate(lang, 'timetable')}</h2>
-            <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{direction === Direction.SOUTH_TO_NORTH ? translate(lang, 'direction_sn') : translate(lang, 'direction_ns')}</p><p className="mt-0.5 truncate text-xs text-slate-400">{translate(lang, 'tap_to_preview')}</p>
+            <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{direction === Direction.SOUTH_TO_NORTH ? translate(lang, 'direction_sn') : translate(lang, 'direction_ns')}</p>
           </div>
         </div>
         {isLive && (
@@ -63,7 +63,7 @@ const ScheduleList: React.FC<ScheduleListProps> = ({ schedule, currentTimeMinute
       ) : (
         <div className="divide-y divide-slate-100">
           {displayedBuses.map((bus) => {
-            const isPast = isLive && timeToMinutes(bus.departureTime) < currentTimeMinutes;
+            const isPast = isLive && timeToMinutes(bus.departureTime) <= currentTimeMinutes;
             const isSelected = bus.id === selectedBusId;
             return (
               <button

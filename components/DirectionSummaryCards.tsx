@@ -1,98 +1,55 @@
-import React from 'react';
-import { ArrowRight, BusFront, Eye, Radio, Route as RouteIcon } from 'lucide-react';
-import { Language, translate } from '../locales';
 import { Direction, DirectionSummary } from '../types';
-import { timeToMinutes } from '../utils';
+import { Language, translate, TranslationKey } from '../locales';
+import { getDepartureCountdown } from '../lib/shuttle';
 
-interface DirectionSummaryCardsProps {
+interface Props {
   summaries: DirectionSummary[];
   selectedDirection: Direction;
-  lang: Language;
-  isToday: boolean;
   currentTimeMinutes: number;
+  isToday: boolean;
+  lang: Language;
   onSelectDirection: (direction: Direction) => void;
+  layout?: 'top' | 'dock';
 }
 
-const DirectionSummaryCards: React.FC<DirectionSummaryCardsProps> = ({
-  summaries,
-  selectedDirection,
-  lang,
-  isToday,
-  currentTimeMinutes,
-  onSelectDirection,
-}) => {
-  const getTitle = (direction: Direction) => direction === Direction.SOUTH_TO_NORTH
-    ? translate(lang, 'south_departure')
-    : translate(lang, 'north_departure');
-
-  return (
-    <section aria-label={translate(lang, 'direction_switcher')}>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {summaries.map((summary) => {
-          const isSelected = summary.direction === selectedDirection;
-          const countdown = isToday && summary.nextBus
-            ? Math.max(0, timeToMinutes(summary.nextBus.departureTime) - currentTimeMinutes)
-            : null;
-          const status = summary.isServiceEnded
-            ? translate(lang, 'service_ended')
-            : summary.activeRuns > 0
-              ? `${translate(lang, 'running_now')} · ${summary.activeRuns}`
-              : summary.nextBus
-                ? isToday
-                  ? `${translate(lang, 'countdown_prefix')} ${countdown} ${translate(lang, 'min_suffix')}`
-                  : translate(lang, 'future_date_schedule')
-                : translate(lang, 'service_ended');
-          const icon = summary.activeRuns > 0
-            ? <Radio size={17} aria-hidden="true" />
-            : isSelected
-              ? <Eye size={17} aria-hidden="true" />
-              : <BusFront size={17} aria-hidden="true" />;
-
-          return (
-            <button
-              key={summary.routeId}
-              type="button"
-              onClick={() => onSelectDirection(summary.direction)}
-              className={`group min-h-[156px] min-w-0 rounded-3xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${isSelected ? 'border-brand-500 bg-brand-50 shadow-[0_12px_30px_rgba(14,116,144,0.12)]' : 'border-slate-200 bg-white hover:border-brand-300 hover:bg-brand-50/40'}`}
-              aria-pressed={isSelected}
-              aria-label={`${getTitle(summary.direction)}. ${translate(lang, 'view_route')}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                      <RouteIcon size={17} aria-hidden="true" />
-                    </span>
-                    <span className="truncate">{getTitle(summary.direction)}</span>
-                  </div>
-                  <p className="mt-2 text-xs font-semibold text-slate-500">
-                    {isSelected ? translate(lang, 'current_direction') : translate(lang, 'view_route')}
-                  </p>
-                </div>
-                <ArrowRight className={`shrink-0 transition-transform group-hover:translate-x-1 ${isSelected ? 'text-brand-700' : 'text-slate-300'}`} size={18} aria-hidden="true" />
-              </div>
-
-              <div className="mt-5 flex items-end justify-between gap-3">
-                <div>
-                  <div className={`font-mono text-3xl font-black tabular-nums ${summary.nextBus ? (isSelected ? 'text-brand-800' : 'text-slate-900') : 'text-slate-400'}`}>
-                    {summary.nextBus?.departureTime ?? '—'}
-                  </div>
-                  <div className="mt-1 flex items-center gap-1.5 text-xs font-bold text-slate-500">
-                    {icon}
-                    <span>{status}</span>
-                  </div>
-                </div>
-                <div className="text-right text-xs font-semibold text-slate-500">
-                  <div>{translate(lang, 'upcoming_count')}</div>
-                  <div className="mt-1 text-lg font-black tabular-nums text-slate-900">{summary.upcomingRuns}</div>
-                </div>
-              </div>
-            </button>
-          );
-        })}
+export default function DirectionSummaryCards({ summaries, selectedDirection, currentTimeMinutes, isToday, lang, onSelectDirection, layout = 'top' }: Props) {
+  return <div className={'campus-switcher campus-switcher-'+layout}>{summaries.map(summary => {
+    const south = summary.direction === Direction.SOUTH_TO_NORTH;
+    const [next, ...later] = summary.upcomingDepartures;
+    const countdown = next && isToday ? getDepartureCountdown(next.departureTime, currentTimeMinutes) : undefined;
+    const countdownText = countdown ? translate(lang, countdown.unit === 'seconds' ? 'departure_seconds' : 'departure_minutes', { count: countdown.value }) : translate(lang, 'future_date_schedule');
+    const shortCountdown = countdown ? translate(lang, countdown.unit === 'seconds' ? 'departure_seconds_short' : 'departure_minutes_short', { count: countdown.value }) : '';
+    const heading = translate(lang, south ? 'campus_south' : 'campus_north');
+    const origin = next ? translate(lang, ('departure_' + next.origin.id) as TranslationKey) : '';
+    const ended = translate(lang, isToday ? 'departure_none' : 'departure_none_date');
+    return <button key={summary.routeId} className={'departure-card' + (south ? '' : ' north-card') + (countdown?.urgent ? ' departure-urgent' : '')}
+      aria-pressed={summary.direction === selectedDirection}
+      aria-label={[heading, translate(lang, isToday ? 'departure_next' : 'departure_first'), next?.departureTime ?? ended, next && next.runs.length > 1 ? translate(lang,'departure_count',{count:next.runs.length}) : '', next ? countdownText : '', origin, later.length ? translate(lang,'departure_later')+' '+later.map(group=>group.departureTime).join('、') : ''].filter(Boolean).join('，')}
+      onClick={() => onSelectDirection(summary.direction)}>
+      <div className='departure-header'>
+        <span className='departure-campus'>{heading}<em>{translate(lang, south ? 'destination_north' : 'destination_south')}</em></span>
+        {next && <span className='departure-origin'>
+          <span className='origin-full'>{origin}</span>
+          <span className='origin-short'>{translate(lang, ('departure_short_'+next.origin.id) as TranslationKey)}</span>
+        </span>}
       </div>
-    </section>
-  );
-};
-
-export default DirectionSummaryCards;
+      {next ? <>
+        <div className='departure-main'>
+          <div className='departure-primary'>
+            {!isToday && <span className='departure-caption'>{translate(lang, 'departure_first')}</span>}
+            <div className='departure-time'><strong>{next.departureTime}</strong></div>
+            {next.runs.length > 1 && <span className='departure-badges'><small>{translate(lang, 'departure_count_short', { count: next.runs.length })}</small></span>}
+          </div>
+          <div className='departure-status'>
+            {isToday && <div className='departure-countdown'>
+              <span className='countdown-full'>{countdownText}</span>
+              <span className='countdown-short'>{shortCountdown}</span>
+            </div>}
+            {next.runs.some(run => run.tag === 'red') && <i className='red-tag'>R</i>}
+          </div>
+        </div>
+        <div className='departure-later'><span>{translate(lang, later.length ? 'departure_later' : 'departure_last')}</span>{later.map(group => <span key={group.departureTime}><time>{group.departureTime}</time>{group.runs.length > 1 && <small title={translate(lang,'departure_count',{count:group.runs.length})}>{translate(lang, 'departure_count_short', { count: group.runs.length })}</small>}{group.runs.some(run => run.tag === 'red') && <i className='red-tag'>R</i>}</span>)}</div>
+      </> : <p className='departure-ended'><span className='ended-full'>{ended}</span><span className='ended-short'>{translate(lang,'departure_none_short')}</span></p>}
+    </button>;
+  })}</div>;
+}

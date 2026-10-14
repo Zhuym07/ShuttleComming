@@ -1,4 +1,4 @@
-import { BusRun, DayOfWeek, Direction, DirectionSummary, LiveBus, RouteMode, RouteId, Station } from '../types';
+import { BusRun, DayOfWeek, Direction, DirectionSummary, LiveBus, RouteMode, RouteId, Station, RouteDefinition, UpcomingDeparture } from '../types';
 import { getRouteId, ROUTES } from '../config/routes';
 import { timeToMinutes } from '../utils';
 
@@ -42,8 +42,29 @@ export const getNextBus = (
 ): BusRun | undefined => {
   if (!schedule.length) return undefined;
   if (!isLive) return schedule[0];
-  return schedule.find((bus) => timeToMinutes(bus.departureTime) >= currentTimeMinutes);
+  return schedule.find((bus) => timeToMinutes(bus.departureTime) > currentTimeMinutes);
 };
+
+export function getUpcomingDepartures(route: RouteDefinition, schedule: BusRun[], currentTimeMinutes: number, isToday: boolean, originId?: string): UpcomingDeparture[] {
+  const groups: UpcomingDeparture[] = [];
+  for (const run of schedule) {
+    if (isToday && timeToMinutes(run.departureTime) <= currentTimeMinutes) continue;
+    const stations = getRouteModeForDeparture(run.departureTime, route.nightModeStartMinutes) === 'night' ? route.nightStations : route.dayStations;
+    if (originId && stations[0].id !== originId) continue;
+    const previous = groups[groups.length - 1];
+    if (previous?.departureTime === run.departureTime) previous.runs.push(run);
+    else {
+      if (groups.length === 3) break;
+      groups.push({ departureTime: run.departureTime, runs: [run], origin: stations[0] });
+    }
+  }
+  return groups;
+}
+
+export function getDepartureCountdown(departureTime: string, currentTimeMinutes: number) {
+  const seconds = Math.max(0, Math.ceil(timeToMinutes(departureTime) * 60 - currentTimeMinutes * 60));
+  return { value: seconds < 60 ? seconds : Math.ceil(seconds / 60), unit: seconds < 60 ? 'seconds' as const : 'minutes' as const, urgent: seconds > 0 && seconds <= 300 };
+}
 
 export const getActiveBuses = (
   schedule: BusRun[],
@@ -56,7 +77,7 @@ export const getActiveBuses = (
 
   return schedule.flatMap((bus) => {
     const elapsed = currentTimeMinutes - timeToMinutes(bus.departureTime);
-    if (elapsed < 0 || elapsed > (typeof totalDuration === 'function' ? totalDuration(bus) : totalDuration) + 2) return [];
+    if (elapsed < 0 || elapsed >= (typeof totalDuration === 'function' ? totalDuration(bus) : totalDuration)) return [];
     return [{
       runId: bus.id,
       currentMinutesFromStart: elapsed,
@@ -108,7 +129,7 @@ export const getShuttleSummary = (
   activeRuns: number,
 ): ShuttleSummary => {
   const upcoming = isToday
-    ? schedule.filter((bus) => timeToMinutes(bus.departureTime) >= currentTimeMinutes)
+    ? schedule.filter((bus) => timeToMinutes(bus.departureTime) > currentTimeMinutes)
     : schedule;
   return {
     totalRuns: schedule.length,
@@ -145,7 +166,7 @@ export const getDirectionSummary = ({
     ).length
     : 0;
   const upcomingRuns = isToday
-    ? schedule.filter((bus) => timeToMinutes(bus.departureTime) >= currentTimeMinutes).length
+    ? schedule.filter((bus) => timeToMinutes(bus.departureTime) > currentTimeMinutes).length
     : schedule.length;
 
   return {
@@ -153,6 +174,7 @@ export const getDirectionSummary = ({
     routeId,
     schedule,
     nextBus,
+    upcomingDepartures: getUpcomingDepartures(route, schedule, currentTimeMinutes, isToday),
     activeRuns,
     upcomingRuns,
     isServiceEnded: isToday && schedule.length > 0 && !nextBus && activeRuns === 0,
